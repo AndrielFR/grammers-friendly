@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "lib/grammers-friendly",
+    "lib/grammers-macros",
+]
+resolver = "2"
+
+[path.crates-io]
+grammers-friendly = { path = "lib/grammers-friendly" }
+grammers-macros = { path = "lib/grammers-macros" }

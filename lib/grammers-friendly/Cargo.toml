@@ -1,0 +1,26 @@
+[package]
+name = "grammers-friendly"
+version = "0.1.0"
+authors = ["Andriel Ferreira <andrielfr@proton.me>"]
+license = "MIT OR Apache-2.0"
+description = """
+A friendly extension for the grammers library.
+"""
+homepage = "https://github.com/AndrielFR/grammers-friendly"
+documentation = "https://docs.rs/grammers-friendly"
+repository = "https://github.com/AndrielFR/grammers-friendly"
+keywords = ["telegram", "api", "grammers", "friendly"]
+categories = ["development-tools"]
+edition = "2021"
+
+[features]
+macros = ["grammers-macros"]
+
+[dependencies]
+grammers-macros = { path = "../grammers-macros", version = "0.1", optional = true }
+
+bon = "2.1.0"
+tokio = { version = "1.40.0", default-features = false, features = ["macros", "rt", "signal", "sync"] }
+dyn-clone = "1.0.17"
+futures-util = { version = "0.3.30", default-features = false, features = [ "alloc" ] }
+grammers-client = { git = "https://github.com/Lonami/grammers" }
