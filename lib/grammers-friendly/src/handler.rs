@@ -14,6 +14,7 @@ use grammers_client::{Client, Update};
 
 use crate::Filter;
 
+/// Handler
 #[derive(Clone)]
 pub struct Handler {
     name: String,

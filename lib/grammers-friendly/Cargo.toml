@@ -19,7 +19,6 @@ macros = ["grammers-macros"]
 [dependencies]
 grammers-macros = { path = "../grammers-macros", version = "0.1", optional = true }
 
-bon = "2.1.0"
 tokio = { version = "1.40.0", default-features = false, features = ["macros", "rt", "signal", "sync"] }
 dyn-clone = "1.0.17"
 futures-util = { version = "0.3.30", default-features = false, features = [ "alloc" ] }

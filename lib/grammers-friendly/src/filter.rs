@@ -8,6 +8,7 @@
 
 use grammers_client::{Client, Update};
 
+/// Filter
 pub trait Filter {
     fn is_ok(&self, client: &Client, update: &Update) -> bool;
 }

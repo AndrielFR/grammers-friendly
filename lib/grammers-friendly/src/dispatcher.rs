@@ -13,6 +13,7 @@ use grammers_client::Client;
 
 use crate::{Handler, Middleware};
 
+/// Dispatcher used to register handlers and middlewares
 pub struct Dispatcher {
     client: Client,
     handlers: Vec<Handler>,
