@@ -15,45 +15,53 @@ use crate::{Handler, Middleware};
 
 /// Dispatcher used to register handlers and middlewares
 pub struct Dispatcher {
-    client: Client,
     handlers: Vec<Handler>,
     middlewares: Vec<Middleware>,
 }
 
 impl Dispatcher {
-    pub fn new(client: Client) -> Self {
+    /// Create a new dispatcher
+    pub fn new() -> Self {
         Self {
-            client,
             handlers: Vec::new(),
             middlewares: Vec::new(),
         }
     }
 
+    /// Add a new handler to the dispatcher
     pub fn handler(mut self, handler: Handler) -> Self {
         self.handlers.push(handler);
         self
     }
 
+    /// Add a new middleware to the dispatcher
     pub fn middleware(mut self, middleware: Middleware) -> Self {
         self.middlewares.push(middleware);
         self
     }
 
-    pub async fn run(self) -> Result<(), Box<dyn std::error::Error>> {
+    /// Run the dispatcher && the bot
+    pub async fn run(self, client: Client) -> Result<(), Box<dyn std::error::Error>> {
         loop {
             let exit = pin!(async { tokio::signal::ctrl_c().await });
-            let upd = pin!(async { self.client.next_update().await });
+            let update = pin!(async { client.next_update().await });
 
-            let update = match select(exit, upd).await {
+            let update = match select(exit, update).await {
                 Either::Left(_) => break,
                 Either::Right((u, _)) => u?,
             };
 
-            let client = self.client.clone();
+            let cl = client.clone();
+            let upd = update.clone();
             let handlers = self.handlers.clone();
+            let middlewares = self.middlewares.clone();
             tokio::task::spawn(async move {
                 for handler in handlers.iter() {
-                    handler.handle(&client, &update.clone().unwrap()).await;
+                    handler.handle(&cl, &upd.clone().unwrap()).await;
+                }
+
+                for middleware in middlewares.iter() {
+                    middleware.handle(&cl, &upd.clone().unwrap()).await;
                 }
             });
         }

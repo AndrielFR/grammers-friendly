@@ -12,8 +12,8 @@ mod dispatcher;
 mod filter;
 mod handler;
 mod middleware;
+pub mod traits;
 
 pub use dispatcher::Dispatcher;
-pub use filter::Filter;
 pub use handler::Handler;
 pub use middleware::Middleware;
