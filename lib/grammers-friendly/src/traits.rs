@@ -41,19 +41,6 @@ pub trait MiddlewareImpl: DynClone {
 
 dyn_clone::clone_trait_object!(MiddlewareImpl);
 
-// trait CloneMiddleware {
-//     fn clone_middleware(&self) -> Box<dyn MiddlewareImpl>;
-// }
-//
-// impl<T> CloneMiddleware for T
-// where
-//     T: MiddlewareImpl + Clone + 'static,
-// {
-//     fn clone_middleware(&self) -> Box<dyn MiddlewareImpl> {
-//         Box::new(self.clone())
-//     }
-// }
-
 /// Filter
 pub trait Filter {
     /// Needs to return bool
