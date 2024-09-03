@@ -8,7 +8,6 @@
 
 mod and;
 mod command;
-mod deleted;
 mod edited;
 mod not;
 mod or;
@@ -17,7 +16,6 @@ mod text;
 
 pub use and::*;
 pub use command::*;
-pub use deleted::*;
 pub use edited::*;
 pub use not::*;
 pub use or::*;
