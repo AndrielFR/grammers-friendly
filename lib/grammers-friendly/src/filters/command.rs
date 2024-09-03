@@ -36,7 +36,7 @@ impl Filter for CommandFilter {
             }
 
             let regex =
-                Regex::new(format!("^[{}]{}", self.prefixes, self.command).as_str()).unwrap();
+                Regex::new(format!(r#"^[{}]{}\s"#, self.prefixes, self.command).as_str()).unwrap();
             return regex.is_match(text);
         }
 
