@@ -18,6 +18,7 @@ pub struct Handler {
     name: String,
     func: Box<dyn AsyncFn + Send + Sync>,
     filter: Arc<dyn Filter + Send + Sync>,
+    // TODO: update_type: UpdateType,
 }
 
 impl Handler {

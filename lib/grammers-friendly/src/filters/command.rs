@@ -35,17 +35,9 @@ impl Filter for CommandFilter {
                 return command == self.command;
             }
 
-            if self.prefixes.len() > 1 {
-                let regex = Regex::new(format!("^[{}]", self.prefixes).as_str()).unwrap();
-                if !regex.is_match(text) {
-                    return false;
-                }
-            } else if !text.starts_with(&self.prefixes) {
-                return false;
-            }
-
-            let command = text[1..].split_whitespace().next().unwrap();
-            return command == self.command;
+            let regex =
+                Regex::new(format!("^[{}]{}", self.prefixes, self.command).as_str()).unwrap();
+            return regex.is_match(text);
         }
 
         false

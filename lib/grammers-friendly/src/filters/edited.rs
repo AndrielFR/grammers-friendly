@@ -10,27 +10,20 @@ use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
 
-pub struct TextFilter {
-    text: String,
-}
+pub struct EditedFilter;
 
-impl TextFilter {
-    pub fn new(text: &str) -> Self {
-        Self {
-            text: text.to_string(),
-        }
+impl EditedFilter {
+    pub fn new() -> Self {
+        Self
     }
 }
 
-impl Filter for TextFilter {
+impl Filter for EditedFilter {
     fn is_ok(&self, _client: &Client, update: &Update) -> bool {
-        if let Update::NewMessage(message) | Update::MessageEdited(message) = update {
-            return message.text().contains(&self.text);
-        }
-        false
+        matches!(update, Update::MessageEdited(_))
     }
 }
 
-pub fn text(text: &str) -> TextFilter {
-    TextFilter::new(text)
+pub fn edited() -> EditedFilter {
+    EditedFilter::new()
 }
