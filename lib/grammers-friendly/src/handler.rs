@@ -17,48 +17,27 @@ use crate::traits::{AsyncFn, Filter};
 pub struct Handler {
     name: String,
     func: Box<dyn AsyncFn + Send + Sync>,
-    filters: Vec<Arc<dyn Filter + Send + Sync>>,
+    filter: Arc<dyn Filter + Send + Sync>,
 }
 
 impl Handler {
     /// Create a new handler
-    pub fn new(name: &str, func: impl AsyncFn + Send + Sync + 'static) -> Self {
+    pub fn new(
+        name: &str,
+        func: impl AsyncFn + Send + Sync + 'static,
+        filter: impl Filter + Send + Sync + 'static,
+    ) -> Self {
         Self {
             name: name.to_string(),
             func: Box::new(func),
-            filters: Vec::new(),
+            filter: Arc::new(filter),
         }
-    }
-
-    /// Add an `and` filter to the handler
-    pub fn filter(mut self, filter: impl Filter + Send + Sync + 'static) -> Self {
-        self.filters.push(Arc::new(filter));
-        self
-    }
-
-    /// Add a `Vec` of filters to the handler
-    pub fn filters(mut self, filters: Vec<impl Filter + Send + Sync + 'static>) -> Self {
-        let _ = filters
-            .into_iter()
-            .map(|f| self.filters.push(Arc::new(f)))
-            .collect::<Vec<_>>();
-        self
     }
 
     /// If filters pass, run the func
     pub async fn handle(&self, client: &Client, update: &Update) {
-        if self.filters.is_empty() {
-            self.func
-                .call(client.clone(), update.clone())
-                .await
-                .unwrap();
+        if !self.filter.is_ok(client, update) {
             return;
-        }
-
-        for filter in self.filters.iter() {
-            if !filter.is_ok(client, update) {
-                return;
-            }
         }
 
         self.func

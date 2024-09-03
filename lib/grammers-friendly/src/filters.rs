@@ -6,18 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![deny(unsafe_code)]
+mod command;
+mod regex;
+mod text;
 
-mod dispatcher;
-mod filter;
-pub mod filters;
-mod handler;
-mod middleware;
-pub mod traits;
-
-pub use dispatcher::Dispatcher;
-pub use handler::Handler;
-pub use middleware::Middleware;
-
-#[cfg(feature = "macros")]
-pub use grammers_macros as macros;
+pub use command::*;
+pub use regex::*;
+pub use text::*;

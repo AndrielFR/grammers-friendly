@@ -29,7 +29,7 @@ impl Middleware {
     }
 
     /// Add a handler to the middleware
-    pub fn handler(mut self, handler: Handler) -> Self {
+    pub fn add_handler(mut self, handler: Handler) -> Self {
         self.handlers.push(handler);
         self
     }
