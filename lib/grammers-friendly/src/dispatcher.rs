@@ -29,13 +29,13 @@ impl Dispatcher {
     }
 
     /// Add a new handler to the dispatcher
-    pub fn handler(mut self, handler: Handler) -> Self {
+    pub fn add_handler(mut self, handler: Handler) -> Self {
         self.handlers.push(handler);
         self
     }
 
     /// Add a new middleware to the dispatcher
-    pub fn middleware(mut self, middleware: Middleware) -> Self {
+    pub fn add_middleware(mut self, middleware: Middleware) -> Self {
         self.middlewares.push(middleware);
         self
     }

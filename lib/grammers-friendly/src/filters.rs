@@ -6,10 +6,16 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+mod and;
 mod command;
+mod not;
+mod or;
 mod regex;
 mod text;
 
+pub use and::*;
 pub use command::*;
+pub use not::*;
+pub use or::*;
 pub use regex::*;
 pub use text::*;
