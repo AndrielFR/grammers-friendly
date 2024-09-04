@@ -29,7 +29,6 @@ impl Filter for TextFilter {
         if let Update::NewMessage(message) | Update::MessageEdited(message) = update {
             return message.text().contains(&self.text);
         }
-
         false
     }
 }

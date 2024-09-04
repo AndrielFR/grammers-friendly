@@ -29,7 +29,7 @@ impl CommandFilter {
 #[async_trait]
 impl Filter for CommandFilter {
     async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
-        if let Update::NewMessage(message) = update {
+        if let Update::NewMessage(message) | Update::MessageEdited(message) = update {
             let text = message.text();
 
             if self.prefixes.is_empty() {
