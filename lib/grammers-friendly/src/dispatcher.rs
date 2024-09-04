@@ -8,8 +8,9 @@
 
 use std::{pin::pin, sync::Arc};
 
+use async_recursion::async_recursion;
 use futures_util::future::{select, Either};
-use grammers_client::Client;
+use grammers_client::{Client, Update};
 
 use crate::{traits::Module, Handler, Middleware};
 
@@ -18,6 +19,7 @@ pub struct Dispatcher {
     handlers: Vec<Handler>,
     middlewares: Vec<Middleware>,
     modules: Vec<Arc<dyn Module>>,
+    routers: Vec<Arc<Dispatcher>>,
 }
 
 impl Dispatcher {
@@ -27,28 +29,35 @@ impl Dispatcher {
             handlers: Vec::new(),
             middlewares: Vec::new(),
             modules: Vec::new(),
+            routers: Vec::new(),
         }
     }
 
-    /// Add a new handler to the dispatcher
+    /// Attach a new handler to the dispatcher
     pub fn add_handler(mut self, handler: Handler) -> Self {
         self.handlers.push(handler);
         self
     }
 
-    /// Add a new middleware to the dispatcher
+    /// Attach a new middleware to the dispatcher
     pub fn add_middleware(mut self, middleware: Middleware) -> Self {
         self.middlewares.push(middleware);
         self
     }
 
-    /// Add a new module to the dispatcher
+    /// Attach a new module to the dispatcher
     pub fn add_module(mut self, module: impl Module + Send + Sync + 'static) -> Self {
         self.modules.push(Arc::new(module));
         self
     }
 
-    /// Run the dispatcher && the bot
+    /// Attach a new router (sub-disptacher) to the dispatcher
+    pub fn add_router(mut self, router: Dispatcher) -> Self {
+        self.routers.push(Arc::new(router));
+        self
+    }
+
+    /// Run the main dispatcher
     pub async fn run(self, client: Client) -> Result<(), Box<dyn std::error::Error>> {
         loop {
             let exit = pin!(async { tokio::signal::ctrl_c().await });
@@ -59,34 +68,54 @@ impl Dispatcher {
                 Either::Right((u, _)) => u?,
             };
 
-            let client = client.clone();
-            let update = update.unwrap();
+            self.handle_update(client.clone(), update.unwrap()).await?;
+        }
+
+        Ok(())
+    }
+
+    #[async_recursion]
+    pub(crate) async fn handle_update(
+        &self,
+        client: Client,
+        update: Update,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if !self.handlers.is_empty() || !self.middlewares.is_empty() || !self.modules.is_empty() {
+            let mut client = client.clone();
+            let mut update = update.clone();
             let handlers = self.handlers.clone();
             let middlewares = self.middlewares.clone();
             let modules = self.modules.clone();
             tokio::task::spawn(async move {
                 for module in modules.iter() {
-                    module
-                        .ante_call(client.clone(), update.clone())
-                        .await
-                        .unwrap();
+                    module.ante_call(&mut client, &mut update).await.unwrap();
                 }
 
                 for handler in handlers.iter() {
-                    handler.handle(&client, &update, &modules).await;
+                    if handler.handle(&client, &update, &modules).await {
+                        return;
+                    }
                 }
 
                 for middleware in middlewares.iter() {
-                    middleware.handle(&client, &update, &modules).await;
+                    if middleware.handle(&client, &update, &modules).await {
+                        return;
+                    }
                 }
 
                 for module in modules.iter() {
-                    module
-                        .post_call(client.clone(), update.clone())
-                        .await
-                        .unwrap();
+                    module.post_call(&mut client, &mut update).await.unwrap();
                 }
             });
+        }
+
+        if !self.routers.is_empty() {
+            for router in self.routers.iter() {
+                router
+                    .handle_update(client.clone(), update.clone())
+                    .await
+                    .unwrap();
+            }
         }
 
         Ok(())

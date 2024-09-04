@@ -14,6 +14,8 @@ use dyn_clone::DynClone;
 use futures_util::Future;
 use grammers_client::{Client, Update};
 
+use crate::filters::{AndFilter, NotFilter, OrFilter};
+
 type PinBox =
     Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + Sync + 'static>>;
 
@@ -46,6 +48,27 @@ pub trait Filter {
     /// `True` -> pass
     /// `False` -> not pass
     async fn is_ok(&self, client: &Client, update: &Update) -> bool;
+
+    fn and(self, other: impl Filter + Send + Sync + 'static) -> AndFilter
+    where
+        Self: Send + Sync + Sized + 'static,
+    {
+        AndFilter::new(self, other)
+    }
+
+    fn or(self, other: impl Filter + Send + Sync + 'static) -> OrFilter
+    where
+        Self: Send + Sync + Sized + 'static,
+    {
+        OrFilter::new(self, other)
+    }
+
+    fn not(self) -> NotFilter
+    where
+        Self: Send + Sync + Sized + 'static,
+    {
+        NotFilter::new(self)
+    }
 }
 
 /// Middleware
@@ -61,13 +84,13 @@ dyn_clone::clone_trait_object!(MiddlewareImpl);
 pub trait Module: DowncastSync {
     async fn ante_call(
         &self,
-        client: Client,
-        update: Update,
+        client: &mut Client,
+        update: &mut Update,
     ) -> Result<(), Box<dyn std::error::Error>>;
     async fn post_call(
         &self,
-        client: Client,
-        update: Update,
+        client: &mut Client,
+        update: &mut Update,
     ) -> Result<(), Box<dyn std::error::Error>>;
 }
 

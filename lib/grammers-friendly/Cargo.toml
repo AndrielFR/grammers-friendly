@@ -25,4 +25,5 @@ dyn-clone = "1.0.17"
 async-trait = "0.1.82"
 downcast-rs = { version = "1.2.1", default-features = false }
 futures-util = { version = "0.3.30", default-features = false, features = [ "alloc" ] }
+async-recursion = "1.1.1"
 grammers-client = { git = "https://github.com/Lonami/grammers" }
