@@ -15,6 +15,7 @@ use grammers_client::{Client, Update};
 use crate::{traits::Module, Handler, Middleware};
 
 /// Dispatcher used to register handlers and middlewares
+#[derive(Default)]
 pub struct Dispatcher {
     handlers: Vec<Handler>,
     middlewares: Vec<Middleware>,
@@ -23,16 +24,6 @@ pub struct Dispatcher {
 }
 
 impl Dispatcher {
-    /// Create a new dispatcher
-    pub fn new() -> Self {
-        Self {
-            handlers: Vec::new(),
-            middlewares: Vec::new(),
-            modules: Vec::new(),
-            routers: Vec::new(),
-        }
-    }
-
     /// Attach a new handler to the dispatcher
     pub fn add_handler(mut self, handler: Handler) -> Self {
         self.handlers.push(handler);
@@ -68,7 +59,7 @@ impl Dispatcher {
                 Either::Right((u, _)) => u?,
             };
 
-            self.handle_update(client.clone(), update.unwrap()).await?;
+            self.handle_update(client.clone(), update).await?;
         }
 
         Ok(())
