@@ -18,16 +18,14 @@ use crate::{
 /// Middleware
 #[derive(Clone)]
 pub struct Middleware {
-    name: String,
     mid: Box<dyn MiddlewareImpl + Send + Sync + 'static>,
     handlers: Vec<Handler>,
 }
 
 impl Middleware {
     /// Create a new middleware
-    pub fn new(name: &str, mid: impl MiddlewareImpl + Send + Sync + 'static) -> Self {
+    pub fn new(mid: impl MiddlewareImpl + Send + Sync + 'static) -> Self {
         Self {
-            name: name.to_string(),
             mid: Box::new(mid),
             handlers: Vec::new(),
         }
