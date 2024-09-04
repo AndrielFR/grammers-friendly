@@ -6,17 +6,18 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::pin::pin;
+use std::{pin::pin, sync::Arc};
 
 use futures_util::future::{select, Either};
 use grammers_client::Client;
 
-use crate::{Handler, Middleware};
+use crate::{traits::Module, Handler, Middleware};
 
 /// Dispatcher used to register handlers and middlewares
 pub struct Dispatcher {
     handlers: Vec<Handler>,
     middlewares: Vec<Middleware>,
+    modules: Vec<Arc<dyn Module + Send + Sync>>,
 }
 
 impl Dispatcher {
@@ -25,6 +26,7 @@ impl Dispatcher {
         Self {
             handlers: Vec::new(),
             middlewares: Vec::new(),
+            modules: Vec::new(),
         }
     }
 
@@ -40,6 +42,12 @@ impl Dispatcher {
         self
     }
 
+    /// Add a new module to the dispatcher
+    pub fn add_module(mut self, module: impl Module + Send + Sync + 'static) -> Self {
+        self.modules.push(Arc::new(module));
+        self
+    }
+
     /// Run the dispatcher && the bot
     pub async fn run(self, client: Client) -> Result<(), Box<dyn std::error::Error>> {
         loop {
@@ -51,17 +59,32 @@ impl Dispatcher {
                 Either::Right((u, _)) => u?,
             };
 
-            let cl = client.clone();
-            let upd = update.clone();
+            let client = client.clone();
+            let update = update.unwrap();
             let handlers = self.handlers.clone();
             let middlewares = self.middlewares.clone();
+            let modules = self.modules.clone();
             tokio::task::spawn(async move {
+                for module in modules.iter() {
+                    module
+                        .ante_call(client.clone(), update.clone())
+                        .await
+                        .unwrap();
+                }
+
                 for handler in handlers.iter() {
-                    handler.handle(&cl, &upd.clone().unwrap()).await;
+                    handler.handle(&client, &update, &modules).await;
                 }
 
                 for middleware in middlewares.iter() {
-                    middleware.handle(&cl, &upd.clone().unwrap()).await;
+                    middleware.handle(&client, &update, &modules).await;
+                }
+
+                for module in modules.iter() {
+                    module
+                        .post_call(client.clone(), update.clone())
+                        .await
+                        .unwrap();
                 }
             });
         }

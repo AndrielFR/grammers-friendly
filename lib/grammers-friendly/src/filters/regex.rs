@@ -27,7 +27,7 @@ impl RegexFilter {
 #[async_trait]
 impl Filter for RegexFilter {
     async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
-        if let Update::NewMessage(message) = update {
+        if let Update::NewMessage(message) | Update::MessageEdited(message) = update {
             return self.regex.is_match(message.text());
         }
 

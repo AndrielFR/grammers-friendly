@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use grammers_client::{Client, Update};
 
-use crate::traits::{AsyncFn, Filter};
+use crate::traits::{AsyncFn, Filter, Module};
 
 /// Handler
 #[derive(Clone)]
@@ -36,13 +36,18 @@ impl Handler {
     }
 
     /// If filters pass, run the func
-    pub async fn handle(&self, client: &Client, update: &Update) {
+    pub async fn handle(
+        &self,
+        client: &Client,
+        update: &Update,
+        modules: &Vec<Arc<dyn Module + Send + Sync>>,
+    ) {
         if !self.filter.is_ok(client, update).await {
             return;
         }
 
         self.func
-            .call(client.clone(), update.clone())
+            .call(client.clone(), update.clone(), modules.clone())
             .await
             .unwrap();
     }

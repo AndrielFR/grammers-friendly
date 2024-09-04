@@ -6,9 +6,14 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use std::sync::Arc;
+
 use grammers_client::{Client, Update};
 
-use crate::{traits::MiddlewareImpl, Handler};
+use crate::{
+    traits::{MiddlewareImpl, Module},
+    Handler,
+};
 
 /// Middleware
 #[derive(Clone)]
@@ -35,10 +40,15 @@ impl Middleware {
     }
 
     /// Before each handler, run the middleware first
-    pub async fn handle(&self, client: &Client, update: &Update) {
+    pub async fn handle(
+        &self,
+        client: &Client,
+        update: &Update,
+        modules: &Vec<Arc<dyn Module + Send + Sync>>,
+    ) {
         for handler in self.handlers.iter() {
             self.mid.call(client.clone(), update.clone()).await.unwrap();
-            handler.handle(client, update).await;
+            handler.handle(client, update, modules).await;
         }
     }
 }
