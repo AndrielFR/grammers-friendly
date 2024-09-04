@@ -6,6 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use async_trait::async_trait;
 use grammers_client::{Client, Update};
 use regex::Regex;
 
@@ -25,8 +26,9 @@ impl CommandFilter {
     }
 }
 
+#[async_trait]
 impl Filter for CommandFilter {
-    fn is_ok(&self, _client: &Client, update: &Update) -> bool {
+    async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
         if let Update::NewMessage(message) = update {
             let text = message.text();
 
@@ -35,8 +37,10 @@ impl Filter for CommandFilter {
                 return command == self.command;
             }
 
-            let regex =
-                Regex::new(format!(r#"^[{}]{}\s"#, self.prefixes, self.command).as_str()).unwrap();
+            let regex = Regex::new(
+                format!(r#"^[{0}]({1}$|{1}(\s))"#, self.prefixes, self.command).as_str(),
+            )
+            .unwrap();
             return regex.is_match(text);
         }
 

@@ -37,7 +37,7 @@ impl Handler {
 
     /// If filters pass, run the func
     pub async fn handle(&self, client: &Client, update: &Update) {
-        if !self.filter.is_ok(client, update) {
+        if !self.filter.is_ok(client, update).await {
             return;
         }
 

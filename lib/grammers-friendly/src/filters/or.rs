@@ -8,6 +8,7 @@
 
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
@@ -29,9 +30,10 @@ impl OrFilter {
     }
 }
 
+#[async_trait]
 impl Filter for OrFilter {
-    fn is_ok(&self, client: &Client, update: &Update) -> bool {
-        self.first.is_ok(client, update) || self.other.is_ok(client, update)
+    async fn is_ok(&self, client: &Client, update: &Update) -> bool {
+        self.first.is_ok(client, update).await || self.other.is_ok(client, update).await
     }
 }
 

@@ -8,6 +8,7 @@
 
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
@@ -24,9 +25,10 @@ impl NotFilter {
     }
 }
 
+#[async_trait]
 impl Filter for NotFilter {
-    fn is_ok(&self, client: &Client, update: &Update) -> bool {
-        !self.filter.is_ok(client, update)
+    async fn is_ok(&self, client: &Client, update: &Update) -> bool {
+        !self.filter.is_ok(client, update).await
     }
 }
 

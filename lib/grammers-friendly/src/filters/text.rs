@@ -6,6 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use async_trait::async_trait;
 use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
@@ -22,8 +23,9 @@ impl TextFilter {
     }
 }
 
+#[async_trait]
 impl Filter for TextFilter {
-    fn is_ok(&self, _client: &Client, update: &Update) -> bool {
+    async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
         if let Update::NewMessage(message) | Update::MessageEdited(message) = update {
             return message.text().contains(&self.text);
         }

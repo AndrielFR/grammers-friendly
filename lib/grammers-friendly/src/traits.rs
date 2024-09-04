@@ -42,9 +42,10 @@ pub trait MiddlewareImpl: DynClone {
 dyn_clone::clone_trait_object!(MiddlewareImpl);
 
 /// Filter
+#[async_trait]
 pub trait Filter {
     /// Needs to return bool
     /// `True` -> pass
     /// `False` -> not pass
-    fn is_ok(&self, client: &Client, update: &Update) -> bool;
+    async fn is_ok(&self, client: &Client, update: &Update) -> bool;
 }

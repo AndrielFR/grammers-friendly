@@ -6,6 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use async_trait::async_trait;
 use grammers_client::{Client, Update};
 use regex::Regex;
 
@@ -23,8 +24,9 @@ impl RegexFilter {
     }
 }
 
+#[async_trait]
 impl Filter for RegexFilter {
-    fn is_ok(&self, _client: &Client, update: &Update) -> bool {
+    async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
         if let Update::NewMessage(message) = update {
             return self.regex.is_match(message.text());
         }
