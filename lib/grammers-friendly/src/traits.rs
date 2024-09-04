@@ -22,22 +22,17 @@ pub trait AsyncFn: DynClone {
         &self,
         client: Client,
         update: Update,
-        modules: Vec<Arc<dyn Module + Send + Sync + 'static>>,
+        modules: Vec<Arc<dyn Module + 'static>>,
     ) -> PinBox;
 }
 
 impl<T, F> AsyncFn for T
 where
-    T: Fn(Client, Update, Vec<Arc<dyn Module + Send + Sync + 'static>>) -> F,
+    T: Fn(Client, Update, Vec<Arc<dyn Module + 'static>>) -> F,
     T: DynClone,
     F: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + Sync + 'static,
 {
-    fn call(
-        &self,
-        client: Client,
-        update: Update,
-        modules: Vec<Arc<dyn Module + Send + Sync>>,
-    ) -> PinBox {
+    fn call(&self, client: Client, update: Update, modules: Vec<Arc<dyn Module>>) -> PinBox {
         Box::pin(self(client, update, modules))
     }
 }
@@ -54,8 +49,9 @@ pub trait Filter {
 }
 
 /// Middleware
+#[async_trait]
 pub trait MiddlewareImpl: DynClone {
-    fn call(&self, client: Client, update: Update) -> PinBox;
+    async fn call(&self, client: Client, update: Update) -> Result<(), Box<dyn std::error::Error>>;
 }
 
 dyn_clone::clone_trait_object!(MiddlewareImpl);

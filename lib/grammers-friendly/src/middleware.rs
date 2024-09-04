@@ -40,12 +40,7 @@ impl Middleware {
     }
 
     /// Before each handler, run the middleware first
-    pub async fn handle(
-        &self,
-        client: &Client,
-        update: &Update,
-        modules: &Vec<Arc<dyn Module + Send + Sync>>,
-    ) {
+    pub async fn handle(&self, client: &Client, update: &Update, modules: &Vec<Arc<dyn Module>>) {
         for handler in self.handlers.iter() {
             self.mid.call(client.clone(), update.clone()).await.unwrap();
             handler.handle(client, update, modules).await;

@@ -36,12 +36,7 @@ impl Handler {
     }
 
     /// If filters pass, run the func
-    pub async fn handle(
-        &self,
-        client: &Client,
-        update: &Update,
-        modules: &Vec<Arc<dyn Module + Send + Sync>>,
-    ) {
+    pub async fn handle(&self, client: &Client, update: &Update, modules: &Vec<Arc<dyn Module>>) {
         if !self.filter.is_ok(client, update).await {
             return;
         }

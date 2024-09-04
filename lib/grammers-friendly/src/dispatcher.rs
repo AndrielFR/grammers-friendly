@@ -17,7 +17,7 @@ use crate::{traits::Module, Handler, Middleware};
 pub struct Dispatcher {
     handlers: Vec<Handler>,
     middlewares: Vec<Middleware>,
-    modules: Vec<Arc<dyn Module + Send + Sync>>,
+    modules: Vec<Arc<dyn Module>>,
 }
 
 impl Dispatcher {
