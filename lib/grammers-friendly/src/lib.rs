@@ -16,7 +16,7 @@ mod middleware;
 pub mod traits;
 
 pub use dispatcher::Dispatcher;
-pub use handler::Handler;
+pub use handler::{Handler, UpdateType};
 pub use middleware::Middleware;
 
 #[cfg(feature = "macros")]
