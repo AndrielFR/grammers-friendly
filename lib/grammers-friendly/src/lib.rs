@@ -14,6 +14,7 @@ pub mod filters;
 mod handler;
 mod middleware;
 pub mod traits;
+pub mod utils;
 
 pub use dispatcher::Dispatcher;
 pub use handler::{Handler, UpdateType};
