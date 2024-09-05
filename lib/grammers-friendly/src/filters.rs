@@ -6,18 +6,22 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+mod admin;
 mod and;
 mod command;
 mod edited;
 mod not;
 mod or;
+mod private;
 mod regex;
 mod text;
 
+pub use admin::*;
 pub use and::*;
 pub use command::*;
 pub use edited::*;
 pub use not::*;
 pub use or::*;
+pub use private::*;
 pub use regex::*;
 pub use text::*;

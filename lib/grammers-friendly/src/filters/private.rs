@@ -7,19 +7,24 @@
 // except according to those terms.
 
 use async_trait::async_trait;
-use grammers_client::{Client, Update};
+use grammers_client::{types::Chat, Client, Update};
 
-use crate::traits::Filter;
+use crate::{traits::Filter, utils};
 
-pub struct EditedFilter;
+pub struct PrivateFilter;
 
 #[async_trait]
-impl Filter for EditedFilter {
+impl Filter for PrivateFilter {
     async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
-        matches!(update, Update::MessageEdited(_))
+        let chat = utils::get_chat(update).expect("Failed to get chat");
+
+        match chat {
+            Chat::User(_) => true,
+            Chat::Group(_) | Chat::Channel(_) => false,
+        }
     }
 }
 
-pub fn edited() -> EditedFilter {
-    EditedFilter
+pub fn private() -> PrivateFilter {
+    PrivateFilter
 }
