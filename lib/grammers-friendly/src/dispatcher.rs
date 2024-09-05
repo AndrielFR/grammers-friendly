@@ -11,6 +11,7 @@ use std::{pin::pin, sync::Arc};
 use async_recursion::async_recursion;
 use futures_util::future::{select, Either};
 use grammers_client::{Client, Update};
+use tokio::sync::Mutex;
 
 use crate::{traits::Module, Handler, Middleware};
 
@@ -19,7 +20,7 @@ use crate::{traits::Module, Handler, Middleware};
 pub struct Dispatcher {
     handlers: Vec<Handler>,
     middlewares: Vec<Middleware>,
-    modules: Vec<Arc<dyn Module>>,
+    modules: Vec<Arc<Mutex<dyn Module>>>,
     routers: Vec<Arc<Dispatcher>>,
 }
 
@@ -38,7 +39,7 @@ impl Dispatcher {
 
     /// Attach a new module to the dispatcher
     pub fn add_module(mut self, module: impl Module + Send + Sync + 'static) -> Self {
-        self.modules.push(Arc::new(module));
+        self.modules.push(Arc::new(Mutex::new(module)));
         self
     }
 
@@ -50,17 +51,22 @@ impl Dispatcher {
 
     /// Run the main dispatcher
     pub async fn run(self, client: Client) -> Result<(), Box<dyn std::error::Error>> {
-        loop {
-            let exit = pin!(async { tokio::signal::ctrl_c().await });
-            let update = pin!(async { client.next_update().await });
+        moro::async_scope!(|scope| {
+            loop {
+                let exit = pin!(async { tokio::signal::ctrl_c().await });
+                let update = pin!(async { client.next_update().await });
 
-            let update = match select(exit, update).await {
-                Either::Left(_) => break,
-                Either::Right((u, _)) => u?,
-            };
+                let update = match select(exit, update).await {
+                    Either::Left(_) => break,
+                    Either::Right((u, _)) => u.unwrap(),
+                };
 
-            self.handle_update(client.clone(), update).await?;
-        }
+                scope.spawn(async {
+                    self.handle_update(client.clone(), update).await.unwrap();
+                });
+            }
+        })
+        .await;
 
         Ok(())
     }
@@ -71,43 +77,53 @@ impl Dispatcher {
         client: Client,
         update: Update,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if !self.handlers.is_empty() || !self.middlewares.is_empty() || !self.modules.is_empty() {
-            let mut client = client.clone();
-            let mut update = update.clone();
-            let handlers = self.handlers.clone();
-            let middlewares = self.middlewares.clone();
-            let modules = self.modules.clone();
-            tokio::task::spawn(async move {
-                for module in modules.iter() {
-                    module.ante_call(&mut client, &mut update).await.unwrap();
-                }
-
-                for handler in handlers.iter() {
-                    if handler.handle(&client, &update, &modules).await {
-                        return;
+        moro::async_scope!(|scope| {
+            if !self.handlers.is_empty() || !self.middlewares.is_empty() || !self.modules.is_empty()
+            {
+                let mut client = client.clone();
+                let mut update = update.clone();
+                let handlers = self.handlers.clone();
+                let middlewares = self.middlewares.clone();
+                let modules = self.modules.clone();
+                scope.spawn(async move {
+                    for module in modules.iter() {
+                        let mut module = module.lock().await;
+                        module.ante_call(&mut client, &mut update).await.unwrap();
                     }
-                }
 
-                for middleware in middlewares.iter() {
-                    if middleware.handle(&client, &update, &modules).await {
-                        return;
+                    for handler in handlers.iter() {
+                        if handler.handle(&client, &update, &modules).await {
+                            return;
+                        }
                     }
-                }
 
-                for module in modules.iter() {
-                    module.post_call(&mut client, &mut update).await.unwrap();
-                }
-            });
-        }
+                    for middleware in middlewares.iter() {
+                        if middleware.handle(&client, &update, &modules).await {
+                            return;
+                        }
+                    }
 
-        if !self.routers.is_empty() {
-            for router in self.routers.iter() {
-                router
-                    .handle_update(client.clone(), update.clone())
-                    .await
-                    .unwrap();
+                    for module in modules.iter() {
+                        let mut module = module.lock().await;
+                        module.post_call(&mut client, &mut update).await.unwrap();
+                    }
+                });
             }
-        }
+
+            if !self.routers.is_empty() {
+                for router in self.routers.iter() {
+                    scope
+                        .spawn(async {
+                            router
+                                .handle_update(client.clone(), update.clone())
+                                .await
+                                .unwrap();
+                        })
+                        .await;
+                }
+            }
+        })
+        .await;
 
         Ok(())
     }

@@ -9,6 +9,7 @@
 use std::sync::Arc;
 
 use grammers_client::{Client, Update};
+use tokio::sync::Mutex;
 
 use crate::traits::{AsyncFn, Filter, Module};
 
@@ -81,7 +82,7 @@ impl Handler {
         &self,
         client: &Client,
         update: &Update,
-        modules: &Vec<Arc<dyn Module>>,
+        modules: &Vec<Arc<Mutex<dyn Module>>>,
     ) -> bool {
         if matches!(self.update_type, UpdateType::NewMessage)
             && matches!(update, Update::NewMessage(_))

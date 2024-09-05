@@ -13,6 +13,7 @@ use downcast_rs::{impl_downcast, DowncastSync};
 use dyn_clone::DynClone;
 use futures_util::Future;
 use grammers_client::{Client, Update};
+use tokio::sync::Mutex;
 
 use crate::filters::{AndFilter, NotFilter, OrFilter};
 
@@ -24,17 +25,17 @@ pub trait AsyncFn: DynClone {
         &self,
         client: Client,
         update: Update,
-        modules: Vec<Arc<dyn Module + 'static>>,
+        modules: Vec<Arc<Mutex<dyn Module + 'static>>>,
     ) -> PinBox;
 }
 
 impl<T, F> AsyncFn for T
 where
-    T: Fn(Client, Update, Vec<Arc<dyn Module + 'static>>) -> F,
+    T: Fn(Client, Update, Vec<Arc<Mutex<dyn Module + 'static>>>) -> F,
     T: DynClone,
     F: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + Sync + 'static,
 {
-    fn call(&self, client: Client, update: Update, modules: Vec<Arc<dyn Module>>) -> PinBox {
+    fn call(&self, client: Client, update: Update, modules: Vec<Arc<Mutex<dyn Module>>>) -> PinBox {
         Box::pin(self(client, update, modules))
     }
 }
@@ -83,12 +84,12 @@ dyn_clone::clone_trait_object!(MiddlewareImpl);
 #[async_trait]
 pub trait Module: DowncastSync {
     async fn ante_call(
-        &self,
+        &mut self,
         client: &mut Client,
         update: &mut Update,
     ) -> Result<(), Box<dyn std::error::Error>>;
     async fn post_call(
-        &self,
+        &mut self,
         client: &mut Client,
         update: &mut Update,
     ) -> Result<(), Box<dyn std::error::Error>>;

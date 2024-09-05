@@ -9,6 +9,7 @@
 use std::sync::Arc;
 
 use grammers_client::{Client, Update};
+use tokio::sync::Mutex;
 
 use crate::{
     traits::{MiddlewareImpl, Module},
@@ -42,7 +43,7 @@ impl Middleware {
         &self,
         client: &Client,
         update: &Update,
-        modules: &Vec<Arc<dyn Module>>,
+        modules: &Vec<Arc<Mutex<dyn Module>>>,
     ) -> bool {
         if !self.handlers.is_empty() {
             self.mid.call(client.clone(), update.clone()).await.unwrap();
