@@ -11,7 +11,7 @@ use std::{pin::pin, sync::Arc};
 use async_recursion::async_recursion;
 use futures_util::future::{select, Either};
 use grammers_client::{Client, Update};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::{traits::Module, Handler, Middleware};
 
@@ -20,7 +20,7 @@ use crate::{traits::Module, Handler, Middleware};
 pub struct Dispatcher {
     handlers: Vec<Handler>,
     middlewares: Vec<Middleware>,
-    modules: Vec<Arc<Mutex<dyn Module>>>,
+    modules: Vec<Arc<RwLock<dyn Module>>>,
     routers: Vec<Arc<Dispatcher>>,
 }
 
@@ -39,12 +39,16 @@ impl Dispatcher {
 
     /// Attach a new module to the dispatcher
     pub fn add_module(mut self, module: impl Module + Send + Sync + 'static) -> Self {
-        self.modules.push(Arc::new(Mutex::new(module)));
+        self.modules.push(Arc::new(RwLock::new(module)));
         self
     }
 
     /// Attach a new router (sub-disptacher) to the dispatcher
-    pub fn add_router(mut self, router: Dispatcher) -> Self {
+    pub fn add_router(mut self, mut router: Dispatcher) -> Self {
+        self.modules.iter().for_each(|module| {
+            router.modules.push(module.clone());
+        });
+
         self.routers.push(Arc::new(router));
         self
     }
@@ -87,7 +91,7 @@ impl Dispatcher {
                 let modules = self.modules.clone();
                 scope.spawn(async move {
                     for module in modules.iter() {
-                        let mut module = module.lock().await;
+                        let mut module = module.write().await;
                         module.ante_call(&mut client, &mut update).await.unwrap();
                     }
 
@@ -104,7 +108,7 @@ impl Dispatcher {
                     }
 
                     for module in modules.iter() {
-                        let mut module = module.lock().await;
+                        let mut module = module.write().await;
                         module.post_call(&mut client, &mut update).await.unwrap();
                     }
                 });

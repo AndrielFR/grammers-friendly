@@ -13,7 +13,7 @@ use downcast_rs::{impl_downcast, DowncastSync};
 use dyn_clone::DynClone;
 use futures_util::Future;
 use grammers_client::{Client, Update};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::filters::{AndFilter, NotFilter, OrFilter};
 
@@ -25,17 +25,22 @@ pub trait AsyncFn: DynClone {
         &self,
         client: Client,
         update: Update,
-        modules: Vec<Arc<Mutex<dyn Module + 'static>>>,
+        modules: Vec<Arc<RwLock<dyn Module + 'static>>>,
     ) -> PinBox;
 }
 
 impl<T, F> AsyncFn for T
 where
-    T: Fn(Client, Update, Vec<Arc<Mutex<dyn Module + 'static>>>) -> F,
+    T: Fn(Client, Update, Vec<Arc<RwLock<dyn Module + 'static>>>) -> F,
     T: DynClone,
     F: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + Sync + 'static,
 {
-    fn call(&self, client: Client, update: Update, modules: Vec<Arc<Mutex<dyn Module>>>) -> PinBox {
+    fn call(
+        &self,
+        client: Client,
+        update: Update,
+        modules: Vec<Arc<RwLock<dyn Module>>>,
+    ) -> PinBox {
         Box::pin(self(client, update, modules))
     }
 }

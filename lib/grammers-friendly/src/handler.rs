@@ -9,7 +9,7 @@
 use std::sync::Arc;
 
 use grammers_client::{Client, Update};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::traits::{AsyncFn, Filter, Module};
 
@@ -82,7 +82,7 @@ impl Handler {
         &self,
         client: &Client,
         update: &Update,
-        modules: &Vec<Arc<Mutex<dyn Module>>>,
+        modules: &[Arc<RwLock<dyn Module>>],
     ) -> bool {
         if matches!(self.update_type, UpdateType::NewMessage)
             && matches!(update, Update::NewMessage(_))
@@ -101,7 +101,7 @@ impl Handler {
             }
 
             self.func
-                .call(client.clone(), update.clone(), modules.clone())
+                .call(client.clone(), update.clone(), modules.to_vec())
                 .await
                 .unwrap();
 
