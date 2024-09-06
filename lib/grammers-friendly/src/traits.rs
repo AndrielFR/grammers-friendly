@@ -18,7 +18,7 @@ use tokio::sync::RwLock;
 use crate::filters::{AndFilter, NotFilter, OrFilter};
 
 type PinBox =
-    Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + Sync + 'static>>;
+    Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>;
 
 pub trait AsyncFn: DynClone {
     fn call(
@@ -33,7 +33,7 @@ impl<T, F> AsyncFn for T
 where
     T: Fn(Client, Update, Vec<Arc<RwLock<dyn Module + 'static>>>) -> F,
     T: DynClone,
-    F: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + Sync + 'static,
+    F: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,
 {
     fn call(
         &self,
