@@ -16,32 +16,3 @@ macro_rules! command {
         ::grammers_friendly::filters::CommandFilter::new($prefixes, $command)
     };
 }
-
-#[macro_export]
-macro_rules! get_module {
-    ($var:ident, $data:ident, $type:ty) => {
-        let __modules = $data.modules();
-        let __index = {
-            let mut num = None;
-
-            for (i, module) in __modules.iter().enumerate() {
-                let guard = module.lock().await;
-                if guard.is::<$type>() {
-                    num = Some(i);
-                    break;
-                }
-            }
-
-            num
-        }
-        .expect("module not found");
-        let mut __guard = __modules
-            .get(__index)
-            .expect("module not found")
-            .lock()
-            .await;
-        let $var = __guard
-            .downcast_mut::<$type>()
-            .expect("module is not of the expected type");
-    };
-}
