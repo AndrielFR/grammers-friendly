@@ -28,7 +28,7 @@ use crate::modules::I18n;
     ...
     Dispatcher::default()
         .add_module(I18n::new("pt-BR"))
-        .add_handler(Handler::new(test_handler, filters::text("hi!")))
+        .add_handler(Handler::new_message(test_handler, filters::text("hi!")))
         .run(client.clone())
         .await?;
     ...
@@ -46,7 +46,7 @@ use grammers_friendly::{filters, traits::GetMessage, Data, Handler};
 use crate::modules::I18n;
 
     ...
-    let handler = Handler::new(test_handler, filters::text("hi!"))
+    let handler = Handler::new_message(test_handler, filters::text("hi!"))
     ...
 
 async fn test_handler(_client: Client, update: Update, data: Data) -> Result<(), Box<dyn std::error::Error> {
