@@ -81,6 +81,7 @@ impl Dispatcher {
     }
 }
 
+/// Handle the updates sent by Telegram
 #[async_recursion]
 pub(crate) async fn handle_update(
     client: Client,

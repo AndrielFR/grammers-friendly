@@ -24,6 +24,7 @@ use crate::{
 type PinBox =
     Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>;
 
+/// The async `func` from handlers
 pub trait AsyncFn: Send + Sync + 'static {
     fn call(&self, client: Client, update: Update, data: Data) -> PinBox;
 }
@@ -46,13 +47,15 @@ pub trait Filter: CloneFilter + Send + Sync + 'static {
     /// `False` -> not pass
     async fn is_ok(&mut self, client: &Client, update: &Update) -> bool;
 
-    fn and(self, other: impl Filter) -> AndFilter
+    /// Wrappes `self` and `second` into `AndFilter`
+    fn and(self, second: impl Filter) -> AndFilter
     where
         Self: Sized,
     {
-        AndFilter::new(self, other)
+        AndFilter::new(self, second)
     }
 
+    /// Wrappes `self` and `other` into `OrFilter`
     fn or(self, other: impl Filter) -> OrFilter
     where
         Self: Sized,
@@ -60,6 +63,7 @@ pub trait Filter: CloneFilter + Send + Sync + 'static {
         OrFilter::new(self, other)
     }
 
+    /// Wrappes `self` into `NotFilter`
     fn not(self) -> NotFilter
     where
         Self: Sized,

@@ -12,6 +12,7 @@ use grammers_client::{
     Update,
 };
 
+/// Get the chat from [Update]
 pub fn get_chat(update: &Update) -> Option<Chat> {
     let mut chat = None;
 
@@ -24,6 +25,7 @@ pub fn get_chat(update: &Update) -> Option<Chat> {
     chat
 }
 
+/// Get the message from [Update]
 pub fn get_message(update: &Update) -> Option<Message> {
     let mut message = None;
 
@@ -34,6 +36,7 @@ pub fn get_message(update: &Update) -> Option<Message> {
     message
 }
 
+/// Get the query from [Update]
 pub fn get_query(update: &Update) -> Option<CallbackQuery> {
     let mut query = None;
 
@@ -44,6 +47,7 @@ pub fn get_query(update: &Update) -> Option<CallbackQuery> {
     query
 }
 
+/// Get the sender from [Update]
 pub fn get_sender(update: &Update) -> Option<Chat> {
     let mut sender = None;
 
@@ -56,6 +60,7 @@ pub fn get_sender(update: &Update) -> Option<Chat> {
     sender
 }
 
+/// Split the inline keyboard by n colums
 pub fn split_kb_to_columns(buttons: Vec<Inline>, count: usize) -> Vec<Vec<Inline>> {
     let mut columns = Vec::new();
 
@@ -76,12 +81,14 @@ pub fn split_kb_to_columns(buttons: Vec<Inline>, count: usize) -> Vec<Vec<Inline
     columns
 }
 
+/// Split the inline keyboard by n rows
 pub fn split_kb_to_rows(buttons: Vec<Inline>, count: usize) -> Vec<Vec<Inline>> {
     let buttons_per_column = buttons.len().abs_diff(count);
 
     split_kb_to_columns(buttons, buttons_per_column)
 }
 
+/// Split the query from `query.data()`
 pub fn split_query<Q: Into<Vec<u8>>>(query: Q) -> Vec<String> {
     let mut splitted = Vec::new();
 

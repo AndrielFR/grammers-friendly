@@ -8,6 +8,7 @@
 
 use crate::traits::Module;
 
+/// Actually it just stores the modules
 #[derive(Clone, Default)]
 pub struct Data {
     pub(crate) modules: Vec<Box<dyn Module>>,

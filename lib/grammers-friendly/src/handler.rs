@@ -95,6 +95,7 @@ impl Handler {
     }
 }
 
+/// Just the update type
 #[derive(Clone)]
 pub enum UpdateType {
     NewMessage,

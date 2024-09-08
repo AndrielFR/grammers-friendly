@@ -11,6 +11,7 @@ use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
 
+/// Ok if `filter` is not ok
 #[derive(Clone)]
 pub struct NotFilter {
     filter: Box<dyn Filter>,
@@ -31,6 +32,7 @@ impl Filter for NotFilter {
     }
 }
 
+/// Ok if `filter` is not ok
 pub fn not(filter: impl Filter) -> NotFilter {
     NotFilter::new(filter)
 }

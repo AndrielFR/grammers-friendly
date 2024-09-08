@@ -11,6 +11,7 @@ use grammers_client::{Client, Update};
 
 use crate::traits::{Filter, GetMessage};
 
+/// Ok if message contains `text`
 #[derive(Clone)]
 pub struct TextFilter {
     text: String,
@@ -37,6 +38,7 @@ impl Filter for TextFilter {
     }
 }
 
+/// Ok if message contains `text`
 pub fn text(text: &str) -> TextFilter {
     TextFilter::new(text)
 }
