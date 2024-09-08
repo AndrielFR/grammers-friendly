@@ -16,12 +16,16 @@ pub struct AdminFilter;
 #[async_trait]
 impl Filter for AdminFilter {
     async fn is_ok(&self, client: &Client, update: &Update) -> bool {
-        let chat = update.get_chat().expect("Failed to get chat");
-        let user = update.get_sender().expect("Failed to get sender");
+        let chat = update.get_chat();
+        let user = update.get_sender();
 
-        let perm = client.get_permissions(chat, user).await.ok();
-        if let Some(perm) = perm {
-            return perm.is_admin() || perm.is_creator();
+        if let Some(chat) = chat {
+            if let Some(user) = user {
+                let perm = client.get_permissions(chat, user).await.ok();
+                if let Some(perm) = perm {
+                    return perm.is_admin() || perm.is_creator();
+                }
+            }
         }
 
         false
