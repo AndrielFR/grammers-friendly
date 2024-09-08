@@ -93,13 +93,6 @@ pub trait Module: DowncastSync + CloneModule {
         client: &mut Client,
         update: &mut Update,
     ) -> Result<(), Box<dyn std::error::Error>>;
-
-    fn into_any(self: Box<Self>) -> Box<dyn Module>
-    where
-        Self: Sized,
-    {
-        self
-    }
 }
 
 impl_downcast!(sync Module);
