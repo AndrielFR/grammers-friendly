@@ -21,7 +21,9 @@ grammers-friendly = { git = "https://github.com/AndrielFR/grammers-friendly" }
 
 You can use the dispatcher like this:
 ```rust
-use grammers_friendly::{filters, Dispatcher};
+use grammers_friendly::{filters, Dispatcher, Handler};
+
+use crate::modules::I18n;
 
     ...
     Dispatcher::default()
@@ -41,14 +43,20 @@ You can create handlers easy peazy.
 use grammers_client::{Client, InputMessage, Update};
 use grammers_friendly::{filters, traits::GetMessage, Data, Handler};
 
+use crate::modules::I18n;
+
     ...
     let handler = Handler::new(test_handler, filters::text("hi!"))
     ...
 
-async fn start(_client: Client, update: Update, _data: Data) -> Result<(), Box<dyn std::error::Error> {
+async fn start(_client: Client, update: Update, data: Data) -> Result<(), Box<dyn std::error::Error> {
+    // Get the I18n module
+    let i18n = data.get_module::<I18n>().unwrap();
+    let t = |key: &str| = i18n.get(key);
+
     let message = update.get_message().unwrap();
 
-    message.reply(InputMessage::text("Hello!")).await?;
+    message.reply(InputMessage::text(t("hello"))).await?;
 
     Ok(())
 }
