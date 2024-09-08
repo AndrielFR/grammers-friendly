@@ -12,7 +12,6 @@ macro_rules! command {
         ::grammers_friendly::filters::CommandFilter::new("/", $command)
     };
     ($prefixes:expr, $command:expr) => {
-        extern crate downcast;
         ::grammers_friendly::filters::CommandFilter::new($prefixes, $command)
     };
 }
