@@ -97,13 +97,13 @@ impl Dispatcher {
 
                     for handler in handlers.iter() {
                         if handler.handle(&client, &update, &data).await {
-                            return;
+                            break;
                         }
                     }
 
                     for middleware in middlewares.iter() {
                         if middleware.handle(&client, &update, &data).await {
-                            return;
+                            break;
                         }
                     }
 
@@ -113,17 +113,15 @@ impl Dispatcher {
                 });
             }
 
-            if !self.routers.is_empty() {
-                for router in self.routers.iter() {
-                    scope
-                        .spawn(async {
-                            router
-                                .handle_update(client.clone(), update.clone())
-                                .await
-                                .unwrap();
-                        })
-                        .await;
-                }
+            for router in self.routers.iter() {
+                scope
+                    .spawn(async {
+                        router
+                            .handle_update(client.clone(), update.clone())
+                            .await
+                            .unwrap();
+                    })
+                    .await;
             }
         })
         .await;
