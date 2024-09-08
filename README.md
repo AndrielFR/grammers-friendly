@@ -49,7 +49,7 @@ use crate::modules::I18n;
     let handler = Handler::new(test_handler, filters::text("hi!"))
     ...
 
-async fn start(_client: Client, update: Update, data: Data) -> Result<(), Box<dyn std::error::Error> {
+async fn test_handler(_client: Client, update: Update, data: Data) -> Result<(), Box<dyn std::error::Error> {
     // Get the I18n module
     let i18n = data.get_module::<I18n>().unwrap();
     let t = |key: &str| = i18n.get(key);
