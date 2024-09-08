@@ -44,8 +44,8 @@ impl Dispatcher {
 
     /// Attach a new router (sub-disptacher) to the dispatcher
     pub fn add_router(mut self, mut router: Dispatcher) -> Self {
-        self.data.modules().iter().for_each(|module| {
-            router.data.push_module(module.clone());
+        self.data.modules().into_iter().for_each(|module| {
+            router.data.push_module(module);
         });
 
         self.routers.push(Arc::new(router));
