@@ -6,40 +6,33 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::sync::Arc;
-
 use async_trait::async_trait;
 use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
 
+#[derive(Clone)]
 pub struct OrFilter {
-    first: Arc<dyn Filter + Send + Sync>,
-    other: Arc<dyn Filter + Send + Sync>,
+    first: Box<dyn Filter>,
+    other: Box<dyn Filter>,
 }
 
 impl OrFilter {
-    pub fn new(
-        first: impl Filter + Send + Sync + 'static,
-        other: impl Filter + Send + Sync + 'static,
-    ) -> Self {
+    pub fn new(first: impl Filter, other: impl Filter) -> Self {
         Self {
-            first: Arc::new(first),
-            other: Arc::new(other),
+            first: Box::new(first),
+            other: Box::new(other),
         }
     }
 }
 
 #[async_trait]
 impl Filter for OrFilter {
-    async fn is_ok(&self, client: &Client, update: &Update) -> bool {
+    async fn is_ok(&mut self, client: &Client, update: &Update) -> bool {
         self.first.is_ok(client, update).await || self.other.is_ok(client, update).await
     }
 }
 
-pub fn or(
-    first: impl Filter + Send + Sync + 'static,
-    other: impl Filter + Send + Sync + 'static,
-) -> OrFilter {
+pub fn or(first: impl Filter, other: impl Filter) -> OrFilter {
     OrFilter::new(first, other)
 }

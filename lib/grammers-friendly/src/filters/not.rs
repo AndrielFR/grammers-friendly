@@ -6,32 +6,31 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::sync::Arc;
-
 use async_trait::async_trait;
 use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
 
+#[derive(Clone)]
 pub struct NotFilter {
-    filter: Arc<dyn Filter + Send + Sync>,
+    filter: Box<dyn Filter>,
 }
 
 impl NotFilter {
-    pub fn new(filter: impl Filter + Send + Sync + 'static) -> Self {
+    pub fn new(filter: impl Filter) -> Self {
         Self {
-            filter: Arc::new(filter),
+            filter: Box::new(filter),
         }
     }
 }
 
 #[async_trait]
 impl Filter for NotFilter {
-    async fn is_ok(&self, client: &Client, update: &Update) -> bool {
+    async fn is_ok(&mut self, client: &Client, update: &Update) -> bool {
         !self.filter.is_ok(client, update).await
     }
 }
 
-pub fn not(filter: impl Filter + Send + Sync + 'static) -> NotFilter {
+pub fn not(filter: impl Filter) -> NotFilter {
     NotFilter::new(filter)
 }

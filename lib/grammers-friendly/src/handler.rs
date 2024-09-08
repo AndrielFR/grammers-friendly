@@ -19,7 +19,7 @@ use crate::{
 #[derive(Clone)]
 pub struct Handler {
     func: Arc<dyn AsyncFn>,
-    filter: Arc<dyn Filter>,
+    filter: Box<dyn Filter>,
     update_type: UpdateType,
 }
 
@@ -28,7 +28,7 @@ impl Handler {
     pub fn new(update_type: UpdateType, func: impl AsyncFn, filter: impl Filter) -> Self {
         Self {
             func: Arc::new(func),
-            filter: Arc::new(filter),
+            filter: Box::new(filter),
             update_type,
         }
     }
@@ -64,7 +64,7 @@ impl Handler {
     }
 
     /// Check all the filters and if ok, run the func
-    pub async fn handle(&self, client: &Client, update: &Update, data: &Data) -> bool {
+    pub async fn handle(&mut self, client: &Client, update: &Update, data: &Data) -> bool {
         if matches!(self.update_type, UpdateType::NewMessage)
             && matches!(update, Update::NewMessage(_))
             || matches!(self.update_type, UpdateType::MessageEdited)

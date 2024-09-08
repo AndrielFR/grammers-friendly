@@ -11,11 +11,12 @@ use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
 
+#[derive(Clone)]
 pub struct EditedFilter;
 
 #[async_trait]
 impl Filter for EditedFilter {
-    async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
+    async fn is_ok(&mut self, _client: &Client, update: &Update) -> bool {
         matches!(update, Update::MessageEdited(_))
     }
 }

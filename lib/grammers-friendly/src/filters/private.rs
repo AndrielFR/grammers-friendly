@@ -11,11 +11,12 @@ use grammers_client::{types::Chat, Client, Update};
 
 use crate::traits::{Filter, GetChat};
 
+#[derive(Clone)]
 pub struct PrivateFilter;
 
 #[async_trait]
 impl Filter for PrivateFilter {
-    async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
+    async fn is_ok(&mut self, _client: &Client, update: &Update) -> bool {
         let chat = update.get_chat();
 
         if let Some(chat) = chat {

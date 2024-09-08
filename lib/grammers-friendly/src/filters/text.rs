@@ -11,6 +11,7 @@ use grammers_client::{Client, Update};
 
 use crate::traits::{Filter, GetMessage};
 
+#[derive(Clone)]
 pub struct TextFilter {
     text: String,
 }
@@ -25,7 +26,7 @@ impl TextFilter {
 
 #[async_trait]
 impl Filter for TextFilter {
-    async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
+    async fn is_ok(&mut self, _client: &Client, update: &Update) -> bool {
         let message = update.get_message();
 
         if let Some(message) = message {

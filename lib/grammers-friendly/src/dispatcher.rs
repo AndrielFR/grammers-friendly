@@ -53,82 +53,90 @@ impl Dispatcher {
     }
 
     /// Run the main dispatcher
-    pub async fn run(self, client: Client) -> Result<(), Box<dyn std::error::Error>> {
-        moro::async_scope!(|scope| {
-            loop {
-                let exit = pin!(async { tokio::signal::ctrl_c().await });
-                let update = pin!(async { client.next_update().await });
+    pub async fn run(mut self, client: Client) -> Result<(), Box<dyn std::error::Error>> {
+        loop {
+            let exit = pin!(async { tokio::signal::ctrl_c().await });
+            let update = pin!(async { client.next_update().await });
 
-                let update = match select(exit, update).await {
-                    Either::Left(_) => break,
-                    Either::Right((u, _)) => u.unwrap(),
-                };
+            let update = match select(exit, update).await {
+                Either::Left(_) => break,
+                Either::Right((u, _)) => u.unwrap(),
+            };
 
-                scope.spawn(async {
-                    let r = self.handle_update(client.clone(), update).await;
-                    if let Err(e) = r {
-                        log::error!("Dispatcher error: {}", e);
-                    }
-                });
+            let r = handle_update(
+                client.clone(),
+                update,
+                &mut self.data,
+                &mut self.routers,
+                &mut self.handlers,
+                &mut self.middlewares,
+            )
+            .await;
+            if let Err(e) = r {
+                log::error!("Dispatcher error: {}", e);
             }
-        })
-        .await;
+        }
 
         Ok(())
     }
+}
 
-    #[async_recursion]
-    pub(crate) async fn handle_update(
-        &self,
-        client: Client,
-        update: Update,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        moro::async_scope!(|scope| {
-            if !self.handlers.is_empty()
-                || !self.middlewares.is_empty()
-                || !self.data.modules.is_empty()
-            {
-                let mut client = client.clone();
-                let mut update = update.clone();
-                let mut data = self.data.clone();
-                let handlers = &self.handlers;
-                let middlewares = &self.middlewares;
-                scope.spawn(async move {
-                    for module in (data.modules).iter_mut() {
-                        let _ = module.ante_call(&mut client, &mut update).await;
+#[async_recursion]
+pub(crate) async fn handle_update(
+    client: Client,
+    update: Update,
+    data: &mut Data,
+    routers: &mut [Dispatcher],
+    handlers: &mut [Handler],
+    middlewares: &mut [Middleware],
+) -> Result<(), Box<dyn std::error::Error>> {
+    moro::async_scope!(|scope| {
+        if !handlers.is_empty() || !middlewares.is_empty() || !data.modules.is_empty() {
+            let mut client = client.clone();
+            let mut update = update.clone();
+            scope.spawn(async move {
+                for module in (data.modules).iter_mut() {
+                    let _ = module.ante_call(&mut client, &mut update).await;
+                }
+
+                for handler in handlers.iter_mut() {
+                    if handler.handle(&client, &update, data).await {
+                        break;
                     }
+                }
 
-                    for handler in handlers.iter() {
-                        if handler.handle(&client, &update, &data).await {
-                            break;
-                        }
+                for middleware in middlewares.iter_mut() {
+                    if middleware.handle(&client, &update, data).await {
+                        break;
                     }
+                }
 
-                    for middleware in middlewares.iter() {
-                        if middleware.handle(&client, &update, &data).await {
-                            break;
-                        }
-                    }
+                for module in (data.modules).iter_mut() {
+                    let _ = module.post_call(&mut client, &mut update).await;
+                }
+            });
+        }
 
-                    for module in (data.modules).iter_mut() {
-                        let _ = module.post_call(&mut client, &mut update).await;
-                    }
-                });
-            }
-
-            for router in self.routers.iter() {
-                scope
-                    .spawn(async {
-                        let r = router.handle_update(client.clone(), update.clone()).await;
-                        if let Err(e) = r {
-                            log::error!("Error running router: {}", e);
-                        }
-                    })
+        for router in routers.iter_mut() {
+            scope
+                .spawn(async {
+                    let r = handle_update(
+                        client.clone(),
+                        update.clone(),
+                        &mut router.data,
+                        &mut router.routers,
+                        &mut router.handlers,
+                        &mut router.middlewares,
+                    )
                     .await;
-            }
-        })
-        .await;
+                    if let Err(e) = r {
+                        log::error!("Error running router: {}", e);
+                    }
+                })
+                .await;
+        }
+    })
+    .await;
 
-        Ok(())
-    }
+    Ok(())
 }

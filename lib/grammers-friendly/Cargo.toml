@@ -23,7 +23,6 @@ log = "0.4.22"
 moro = "0.4.0"
 regex = "1.10.6"
 tokio = { version = "1.40.0", default-features = false, features = ["macros", "rt", "signal", "sync"] }
-dyn-clone = "1.0.17"
 async-trait = "0.1.82"
 downcast-rs = { version = "1.2.1", default-features = false }
 futures-util = { version = "0.3.30", default-features = false, features = [ "alloc" ] }

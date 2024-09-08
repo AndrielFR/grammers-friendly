@@ -10,7 +10,6 @@ use std::pin::Pin;
 
 use async_trait::async_trait;
 use downcast_rs::{impl_downcast, DowncastSync};
-use dyn_clone::DynClone;
 use futures_util::Future;
 use grammers_client::{
     types::{CallbackQuery, Chat, Message},
@@ -32,7 +31,6 @@ pub trait AsyncFn: Send + Sync + 'static {
 impl<T, F> AsyncFn for T
 where
     T: Fn(Client, Update, Data) -> F + Send + Sync + 'static,
-    T: DynClone,
     F: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,
 {
     fn call(&self, client: Client, update: Update, data: Data) -> PinBox {
@@ -42,41 +40,77 @@ where
 
 /// Filter
 #[async_trait]
-pub trait Filter: Send + Sync + 'static {
+pub trait Filter: CloneFilter + Send + Sync + 'static {
     /// Needs to return bool
     /// `True` -> pass
     /// `False` -> not pass
-    async fn is_ok(&self, client: &Client, update: &Update) -> bool;
+    async fn is_ok(&mut self, client: &Client, update: &Update) -> bool;
 
-    fn and(self, other: impl Filter + 'static) -> AndFilter
+    fn and(self, other: impl Filter) -> AndFilter
     where
-        Self: Send + Sync + Sized + 'static,
+        Self: Sized,
     {
         AndFilter::new(self, other)
     }
 
-    fn or(self, other: impl Filter + 'static) -> OrFilter
+    fn or(self, other: impl Filter) -> OrFilter
     where
-        Self: Send + Sync + Sized + 'static,
+        Self: Sized,
     {
         OrFilter::new(self, other)
     }
 
     fn not(self) -> NotFilter
     where
-        Self: Send + Sync + Sized + 'static,
+        Self: Sized,
     {
         NotFilter::new(self)
     }
 }
 
+pub trait CloneFilter {
+    fn clone_filter(&self) -> Box<dyn Filter>;
+}
+
+impl<T> CloneFilter for T
+where
+    T: Filter + Clone,
+{
+    fn clone_filter(&self) -> Box<dyn Filter> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn Filter> {
+    fn clone(&self) -> Self {
+        self.clone_filter()
+    }
+}
+
 /// Middleware
 #[async_trait]
-pub trait MiddlewareImpl: DynClone {
+pub trait MiddlewareImpl: CloneMiddlewareImpl + Send + Sync + 'static {
     async fn call(&self, client: Client, update: Update) -> Result<(), Box<dyn std::error::Error>>;
 }
 
-dyn_clone::clone_trait_object!(MiddlewareImpl);
+pub trait CloneMiddlewareImpl {
+    fn clone_midddleware_impl(&self) -> Box<dyn MiddlewareImpl>;
+}
+
+impl<T> CloneMiddlewareImpl for T
+where
+    T: MiddlewareImpl + Clone,
+{
+    fn clone_midddleware_impl(&self) -> Box<dyn MiddlewareImpl> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn MiddlewareImpl> {
+    fn clone(&self) -> Self {
+        self.clone_midddleware_impl()
+    }
+}
 
 /// Module
 #[async_trait]

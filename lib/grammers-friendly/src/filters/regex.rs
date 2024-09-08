@@ -12,6 +12,7 @@ use regex::Regex;
 
 use crate::traits::{Filter, GetMessage, GetQuery};
 
+#[derive(Clone)]
 pub struct RegexFilter {
     regex: Regex,
 }
@@ -26,7 +27,7 @@ impl RegexFilter {
 
 #[async_trait]
 impl Filter for RegexFilter {
-    async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
+    async fn is_ok(&mut self, _client: &Client, update: &Update) -> bool {
         let message = update.get_message();
         let query = update.get_query();
 
