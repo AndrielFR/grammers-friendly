@@ -25,13 +25,13 @@ use crate::{
 type PinBox =
     Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>;
 
-pub trait AsyncFn: DynClone {
+pub trait AsyncFn: Send + Sync + 'static {
     fn call(&self, client: Client, update: Update, data: Data) -> PinBox;
 }
 
 impl<T, F> AsyncFn for T
 where
-    T: Fn(Client, Update, Data) -> F,
+    T: Fn(Client, Update, Data) -> F + Send + Sync + 'static,
     T: DynClone,
     F: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,
 {
@@ -40,24 +40,22 @@ where
     }
 }
 
-dyn_clone::clone_trait_object!(AsyncFn);
-
 /// Filter
 #[async_trait]
-pub trait Filter {
+pub trait Filter: Send + Sync + 'static {
     /// Needs to return bool
     /// `True` -> pass
     /// `False` -> not pass
     async fn is_ok(&self, client: &Client, update: &Update) -> bool;
 
-    fn and(self, other: impl Filter + Send + Sync + 'static) -> AndFilter
+    fn and(self, other: impl Filter + 'static) -> AndFilter
     where
         Self: Send + Sync + Sized + 'static,
     {
         AndFilter::new(self, other)
     }
 
-    fn or(self, other: impl Filter + Send + Sync + 'static) -> OrFilter
+    fn or(self, other: impl Filter + 'static) -> OrFilter
     where
         Self: Send + Sync + Sized + 'static,
     {

@@ -35,7 +35,11 @@ impl Middleware {
     /// Before each handler, run the middleware first
     pub async fn handle(&self, client: &Client, update: &Update, data: &Data) -> bool {
         if !self.handlers.is_empty() {
-            self.mid.call(client.clone(), update.clone()).await.unwrap();
+            let r = self.mid.call(client.clone(), update.clone()).await;
+            if let Err(e) = r {
+                log::error!("Error running middleware: {:?}", e);
+                return false;
+            }
         }
 
         for handler in self.handlers.iter() {

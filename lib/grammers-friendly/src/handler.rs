@@ -18,68 +18,52 @@ use crate::{
 /// Use the Handler struct to create a new handler. The handle method is used to run the function if the filters pass.
 #[derive(Clone)]
 pub struct Handler {
-    func: Box<dyn AsyncFn + Send + Sync>,
-    filter: Arc<dyn Filter + Send + Sync>,
+    func: Arc<dyn AsyncFn>,
+    filter: Arc<dyn Filter>,
     update_type: UpdateType,
 }
 
 impl Handler {
     /// Create a new handler
-    pub fn new(
-        update_type: UpdateType,
-        func: impl AsyncFn + Send + Sync + 'static,
-        filter: impl Filter + Send + Sync + 'static,
-    ) -> Self {
+    pub fn new(update_type: UpdateType, func: impl AsyncFn, filter: impl Filter) -> Self {
         Self {
-            func: Box::new(func),
+            func: Arc::new(func),
             filter: Arc::new(filter),
             update_type,
         }
     }
 
-    pub fn new_message(
-        func: impl AsyncFn + Send + Sync + 'static,
-        filter: impl Filter + Send + Sync + 'static,
-    ) -> Self {
+    /// Create a new handler with `NewMessage` update type
+    pub fn new_message(func: impl AsyncFn, filter: impl Filter) -> Self {
         Self::new(UpdateType::NewMessage, func, filter)
     }
 
-    pub fn message_edited(
-        func: impl AsyncFn + Send + Sync + 'static,
-        filter: impl Filter + Send + Sync + 'static,
-    ) -> Self {
+    /// Create a new handler with `MessageEdited` update type
+    pub fn message_edited(func: impl AsyncFn, filter: impl Filter) -> Self {
         Self::new(UpdateType::MessageEdited, func, filter)
     }
 
-    pub fn message_deleted(
-        func: impl AsyncFn + Send + Sync + 'static,
-        filter: impl Filter + Send + Sync + 'static,
-    ) -> Self {
+    /// Create a new handler with `MessageDeleted` update type
+    pub fn message_deleted(func: impl AsyncFn, filter: impl Filter) -> Self {
         Self::new(UpdateType::MessageDeleted, func, filter)
     }
 
-    pub fn callback_query(
-        func: impl AsyncFn + Send + Sync + 'static,
-        filter: impl Filter + Send + Sync + 'static,
-    ) -> Self {
+    /// Create a new handler with `CallbackQuery` update type
+    pub fn callback_query(func: impl AsyncFn, filter: impl Filter) -> Self {
         Self::new(UpdateType::CallbackQuery, func, filter)
     }
 
-    pub fn inline_query(
-        func: impl AsyncFn + Send + Sync + 'static,
-        filter: impl Filter + Send + Sync + 'static,
-    ) -> Self {
+    /// Create a new handler with `InlineQuery` update type
+    pub fn inline_query(func: impl AsyncFn, filter: impl Filter) -> Self {
         Self::new(UpdateType::InlineQuery, func, filter)
     }
 
-    pub fn raw(
-        func: impl AsyncFn + Send + Sync + 'static,
-        filter: impl Filter + Send + Sync + 'static,
-    ) -> Self {
+    /// Create a new handler with `Raw` update type
+    pub fn raw(func: impl AsyncFn, filter: impl Filter) -> Self {
         Self::new(UpdateType::Raw, func, filter)
     }
 
-    /// If filters pass, run the func
+    /// Check all the filters and if ok, run the func
     pub async fn handle(&self, client: &Client, update: &Update, data: &Data) -> bool {
         if matches!(self.update_type, UpdateType::NewMessage)
             && matches!(update, Update::NewMessage(_))
@@ -97,10 +81,13 @@ impl Handler {
                 return false;
             }
 
-            self.func
+            let r = self
+                .func
                 .call(client.clone(), update.clone(), data.clone())
-                .await
-                .unwrap();
+                .await;
+            if let Err(e) = r {
+                log::error!("Error running handler: {}", e);
+            }
 
             return true;
         }

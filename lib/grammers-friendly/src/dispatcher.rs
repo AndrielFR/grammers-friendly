@@ -37,7 +37,7 @@ impl Dispatcher {
     }
 
     /// Attach a new module to the dispatcher
-    pub fn add_module(mut self, module: impl Module + Send + Sync + 'static) -> Self {
+    pub fn add_module(mut self, module: impl Module) -> Self {
         self.data.add_module(module);
         self
     }
@@ -65,7 +65,10 @@ impl Dispatcher {
                 };
 
                 scope.spawn(async {
-                    self.handle_update(client.clone(), update).await.unwrap();
+                    let r = self.handle_update(client.clone(), update).await;
+                    if let Err(e) = r {
+                        log::error!("Dispatcher error: {}", e);
+                    }
                 });
             }
         })
@@ -116,10 +119,10 @@ impl Dispatcher {
             for router in self.routers.iter() {
                 scope
                     .spawn(async {
-                        router
-                            .handle_update(client.clone(), update.clone())
-                            .await
-                            .unwrap();
+                        let r = router.handle_update(client.clone(), update.clone()).await;
+                        if let Err(e) = r {
+                            log::error!("Error running router: {}", e);
+                        }
                     })
                     .await;
             }
