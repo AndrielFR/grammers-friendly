@@ -35,21 +35,4 @@ impl Data {
             .iter()
             .find_map(|module| module.clone().downcast::<T>().ok())
     }
-
-    /* /// Get a module and downcast it
-    /// Unfortunately, it is necessary to use unsafe code
-    pub fn get_module<T: Module>(&self) -> Option<Arc<Mutex<T>>> {
-        for module in self.modules() {
-            if let Ok(m) = module.try_lock() {
-                if (*m).is::<T>() {
-                    let raw: *const Mutex<dyn Module> = Arc::into_raw(module.clone());
-                    let raw: *const Mutex<T> = raw.cast();
-
-                    return Some(unsafe { Arc::from_raw(raw) });
-                }
-            }
-        }
-
-        None
-    } */
 }
