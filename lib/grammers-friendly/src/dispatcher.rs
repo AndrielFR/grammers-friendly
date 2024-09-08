@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::{pin::pin, sync::Arc};
+use std::pin::pin;
 
 use async_recursion::async_recursion;
 use futures_util::future::{select, Either};
@@ -14,13 +14,13 @@ use grammers_client::{Client, Update};
 
 use crate::{traits::Module, Data, Handler, Middleware};
 
-/// Dispatcher used to register handlers and middlewares
+/// Dispatcher used to register handlers, middlewares and routers
 #[derive(Default)]
 pub struct Dispatcher {
     data: Data,
     handlers: Vec<Handler>,
     middlewares: Vec<Middleware>,
-    routers: Vec<Arc<Dispatcher>>,
+    routers: Vec<Dispatcher>,
 }
 
 impl Dispatcher {
@@ -48,7 +48,7 @@ impl Dispatcher {
             router.data.push_module(module);
         });
 
-        self.routers.push(Arc::new(router));
+        self.routers.push(router);
         self
     }
 
