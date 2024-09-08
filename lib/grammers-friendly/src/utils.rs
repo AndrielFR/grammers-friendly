@@ -24,16 +24,6 @@ pub fn get_chat(update: &Update) -> Option<Chat> {
     chat
 }
 
-pub fn get_query(update: &Update) -> Option<CallbackQuery> {
-    let mut query = None;
-
-    if let Update::CallbackQuery(q) = update {
-        query = Some(q.clone());
-    }
-
-    query
-}
-
 pub fn get_message(update: &Update) -> Option<Message> {
     let mut message = None;
 
@@ -42,6 +32,16 @@ pub fn get_message(update: &Update) -> Option<Message> {
     }
 
     message
+}
+
+pub fn get_query(update: &Update) -> Option<CallbackQuery> {
+    let mut query = None;
+
+    if let Update::CallbackQuery(q) = update {
+        query = Some(q.clone());
+    }
+
+    query
 }
 
 pub fn get_sender(update: &Update) -> Option<Chat> {
@@ -54,6 +54,16 @@ pub fn get_sender(update: &Update) -> Option<Chat> {
     }
 
     sender
+}
+
+pub fn get_text(update: &Update) -> Option<&str> {
+    let mut text = None;
+
+    if let Update::NewMessage(message) | Update::MessageEdited(message) = update {
+        text = Some(message.text());
+    }
+
+    text
 }
 
 pub fn split_kb_to_columns(buttons: Vec<Inline>, count: usize) -> Vec<Vec<Inline>> {

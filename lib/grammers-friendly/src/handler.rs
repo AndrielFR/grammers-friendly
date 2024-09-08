@@ -9,9 +9,11 @@
 use std::sync::Arc;
 
 use grammers_client::{Client, Update};
-use tokio::sync::RwLock;
 
-use crate::traits::{AsyncFn, Filter, Module};
+use crate::{
+    traits::{AsyncFn, Filter},
+    Data,
+};
 
 /// Use the Handler struct to create a new handler. The handle method is used to run the function if the filters pass.
 #[derive(Clone)]
@@ -78,12 +80,7 @@ impl Handler {
     }
 
     /// If filters pass, run the func
-    pub async fn handle(
-        &self,
-        client: &Client,
-        update: &Update,
-        modules: &[Arc<RwLock<dyn Module>>],
-    ) -> bool {
+    pub async fn handle(&self, client: &Client, update: &Update, data: &Data) -> bool {
         if matches!(self.update_type, UpdateType::NewMessage)
             && matches!(update, Update::NewMessage(_))
             || matches!(self.update_type, UpdateType::MessageEdited)
@@ -101,7 +98,7 @@ impl Handler {
             }
 
             self.func
-                .call(client.clone(), update.clone(), modules.to_vec())
+                .call(client.clone(), update.clone(), data.clone())
                 .await
                 .unwrap();
 

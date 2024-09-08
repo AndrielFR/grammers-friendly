@@ -6,8 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![deny(unsafe_code)]
+#![macro_use]
+extern crate downcast_rs;
 
+mod data;
 mod dispatcher;
 mod filter;
 pub mod filters;
@@ -16,6 +18,7 @@ mod middleware;
 pub mod traits;
 pub mod utils;
 
+pub use data::Data;
 pub use dispatcher::Dispatcher;
 pub use handler::{Handler, UpdateType};
 pub use middleware::Middleware;

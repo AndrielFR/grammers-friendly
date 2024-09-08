@@ -6,15 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::sync::Arc;
-
 use grammers_client::{Client, Update};
-use tokio::sync::RwLock;
 
-use crate::{
-    traits::{MiddlewareImpl, Module},
-    Handler,
-};
+use crate::{traits::MiddlewareImpl, Data, Handler};
 
 /// Middleware
 #[derive(Clone)]
@@ -39,18 +33,13 @@ impl Middleware {
     }
 
     /// Before each handler, run the middleware first
-    pub async fn handle(
-        &self,
-        client: &Client,
-        update: &Update,
-        modules: &[Arc<RwLock<dyn Module>>],
-    ) -> bool {
+    pub async fn handle(&self, client: &Client, update: &Update, data: &Data) -> bool {
         if !self.handlers.is_empty() {
             self.mid.call(client.clone(), update.clone()).await.unwrap();
         }
 
         for handler in self.handlers.iter() {
-            if handler.handle(client, update, modules).await {
+            if handler.handle(client, update, data).await {
                 return true;
             }
         }

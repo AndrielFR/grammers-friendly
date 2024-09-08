@@ -11,16 +11,15 @@ use std::{pin::pin, sync::Arc};
 use async_recursion::async_recursion;
 use futures_util::future::{select, Either};
 use grammers_client::{Client, Update};
-use tokio::sync::RwLock;
 
-use crate::{traits::Module, Handler, Middleware};
+use crate::{traits::Module, Data, Handler, Middleware};
 
 /// Dispatcher used to register handlers and middlewares
 #[derive(Default)]
 pub struct Dispatcher {
+    data: Data,
     handlers: Vec<Handler>,
     middlewares: Vec<Middleware>,
-    modules: Vec<Arc<RwLock<dyn Module>>>,
     routers: Vec<Arc<Dispatcher>>,
 }
 
@@ -39,14 +38,14 @@ impl Dispatcher {
 
     /// Attach a new module to the dispatcher
     pub fn add_module(mut self, module: impl Module + Send + Sync + 'static) -> Self {
-        self.modules.push(Arc::new(RwLock::new(module)));
+        self.data.add_module(module);
         self
     }
 
     /// Attach a new router (sub-disptacher) to the dispatcher
     pub fn add_router(mut self, mut router: Dispatcher) -> Self {
-        self.modules.iter().for_each(|module| {
-            router.modules.push(module.clone());
+        self.data.modules().iter().for_each(|module| {
+            router.data.push_module(module.clone());
         });
 
         self.routers.push(Arc::new(router));
@@ -82,33 +81,33 @@ impl Dispatcher {
         update: Update,
     ) -> Result<(), Box<dyn std::error::Error>> {
         moro::async_scope!(|scope| {
-            if !self.handlers.is_empty() || !self.middlewares.is_empty() || !self.modules.is_empty()
+            if !self.handlers.is_empty()
+                || !self.middlewares.is_empty()
+                || !self.data.modules.is_empty()
             {
                 let mut client = client.clone();
                 let mut update = update.clone();
-                let handlers = self.handlers.clone();
-                let middlewares = self.middlewares.clone();
-                let modules = self.modules.clone();
+                let mut data = self.data.clone();
+                let handlers = &self.handlers;
+                let middlewares = &self.middlewares;
                 scope.spawn(async move {
-                    for module in modules.iter() {
-                        let mut module = module.write().await;
+                    for module in (data.modules).iter_mut() {
                         module.ante_call(&mut client, &mut update).await.unwrap();
                     }
 
                     for handler in handlers.iter() {
-                        if handler.handle(&client, &update, &modules).await {
+                        if handler.handle(&client, &update, &data).await {
                             return;
                         }
                     }
 
                     for middleware in middlewares.iter() {
-                        if middleware.handle(&client, &update, &modules).await {
+                        if middleware.handle(&client, &update, &data).await {
                             return;
                         }
                     }
 
-                    for module in modules.iter() {
-                        let mut module = module.write().await;
+                    for module in (data.modules).iter_mut() {
                         module.post_call(&mut client, &mut update).await.unwrap();
                     }
                 });
