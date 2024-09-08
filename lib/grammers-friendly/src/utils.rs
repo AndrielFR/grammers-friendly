@@ -56,34 +56,30 @@ pub fn get_sender(update: &Update) -> Option<Chat> {
     sender
 }
 
-pub fn get_text(update: &Update) -> Option<&str> {
-    let mut text = None;
-
-    if let Update::NewMessage(message) | Update::MessageEdited(message) = update {
-        text = Some(message.text());
-    }
-
-    text
-}
-
 pub fn split_kb_to_columns(buttons: Vec<Inline>, count: usize) -> Vec<Vec<Inline>> {
     let mut columns = Vec::new();
 
-    let mut col = Vec::new();
+    let mut column = Vec::new();
     for button in buttons.into_iter() {
-        if col.len() == count {
-            columns.push(col);
-            col = Vec::new();
+        if column.len() == count {
+            columns.push(column);
+            column = Vec::new();
         }
 
-        col.push(button);
+        column.push(button);
     }
 
-    if !col.is_empty() {
-        columns.push(col);
+    if !column.is_empty() {
+        columns.push(column);
     }
 
     columns
+}
+
+pub fn split_kb_to_rows(buttons: Vec<Inline>, count: usize) -> Vec<Vec<Inline>> {
+    let buttons_per_column = buttons.len().abs_diff(count);
+
+    split_kb_to_columns(buttons, buttons_per_column)
 }
 
 pub fn split_query<Q: Into<Vec<u8>>>(query: Q) -> Vec<String> {

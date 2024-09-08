@@ -9,7 +9,7 @@
 use async_trait::async_trait;
 use grammers_client::{Client, Update};
 
-use crate::traits::Filter;
+use crate::traits::{Filter, GetMessage};
 
 pub struct TextFilter {
     text: String,
@@ -26,9 +26,12 @@ impl TextFilter {
 #[async_trait]
 impl Filter for TextFilter {
     async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
-        if let Update::NewMessage(message) | Update::MessageEdited(message) = update {
+        let message = update.get_message();
+
+        if let Some(message) = message {
             return message.text().contains(&self.text);
         }
+
         false
     }
 }

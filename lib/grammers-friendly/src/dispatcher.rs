@@ -92,7 +92,7 @@ impl Dispatcher {
                 let middlewares = &self.middlewares;
                 scope.spawn(async move {
                     for module in (data.modules).iter_mut() {
-                        module.ante_call(&mut client, &mut update).await.unwrap();
+                        let _ = module.ante_call(&mut client, &mut update).await;
                     }
 
                     for handler in handlers.iter() {
@@ -108,7 +108,7 @@ impl Dispatcher {
                     }
 
                     for module in (data.modules).iter_mut() {
-                        module.post_call(&mut client, &mut update).await.unwrap();
+                        let _ = module.post_call(&mut client, &mut update).await;
                     }
                 });
             }

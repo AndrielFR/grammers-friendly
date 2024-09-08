@@ -159,14 +159,3 @@ impl GetSender for Update {
         utils::get_sender(self)
     }
 }
-
-pub trait GetText {
-    fn get_text(&self) -> Option<&str>;
-}
-
-/// Get text from [Update]
-impl GetText for Update {
-    fn get_text(&self) -> Option<&str> {
-        utils::get_text(self)
-    }
-}

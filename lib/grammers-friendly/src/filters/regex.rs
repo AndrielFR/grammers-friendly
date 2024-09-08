@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use grammers_client::{Client, Update};
 use regex::Regex;
 
-use crate::traits::Filter;
+use crate::traits::{Filter, GetMessage, GetQuery};
 
 pub struct RegexFilter {
     regex: Regex,
@@ -27,11 +27,14 @@ impl RegexFilter {
 #[async_trait]
 impl Filter for RegexFilter {
     async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
+        let message = update.get_message();
+        let query = update.get_query();
+
         let mut text = String::new();
 
-        if let Update::NewMessage(message) | Update::MessageEdited(message) = update {
+        if let Some(message) = message {
             text = message.text().to_string();
-        } else if let Update::CallbackQuery(query) = update {
+        } else if let Some(query) = query {
             text = String::from_utf8(query.data().to_vec()).unwrap();
         }
 

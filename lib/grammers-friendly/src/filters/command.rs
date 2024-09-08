@@ -10,7 +10,7 @@ use async_trait::async_trait;
 use grammers_client::{Client, Update};
 use regex::Regex;
 
-use crate::traits::Filter;
+use crate::traits::{Filter, GetMessage};
 
 pub struct CommandFilter {
     prefixes: String,
@@ -29,7 +29,9 @@ impl CommandFilter {
 #[async_trait]
 impl Filter for CommandFilter {
     async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
-        if let Update::NewMessage(message) | Update::MessageEdited(message) = update {
+        let message = update.get_message();
+
+        if let Some(message) = message {
             let text = message.text();
 
             if self.prefixes.is_empty() {

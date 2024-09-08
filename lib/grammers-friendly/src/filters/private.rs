@@ -9,19 +9,23 @@
 use async_trait::async_trait;
 use grammers_client::{types::Chat, Client, Update};
 
-use crate::{traits::Filter, utils};
+use crate::traits::{Filter, GetChat};
 
 pub struct PrivateFilter;
 
 #[async_trait]
 impl Filter for PrivateFilter {
     async fn is_ok(&self, _client: &Client, update: &Update) -> bool {
-        let chat = utils::get_chat(update).expect("Failed to get chat");
+        let chat = update.get_chat();
 
-        match chat {
-            Chat::User(_) => true,
-            Chat::Group(_) | Chat::Channel(_) => false,
+        if let Some(chat) = chat {
+            return match chat {
+                Chat::User(_) => true,
+                Chat::Group(_) | Chat::Channel(_) => false,
+            };
         }
+
+        false
     }
 }
 
