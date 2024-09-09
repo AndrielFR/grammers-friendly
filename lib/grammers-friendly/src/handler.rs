@@ -25,7 +25,7 @@ pub struct Handler {
 
 impl Handler {
     /// Create a new handler
-    pub fn new(update_type: UpdateType, func: impl AsyncFn, filter: impl Filter) -> Self {
+    pub fn new<A: AsyncFn, F: Filter>(update_type: UpdateType, func: A, filter: F) -> Self {
         Self {
             func: Arc::new(func),
             filter: Box::new(filter),
@@ -34,32 +34,32 @@ impl Handler {
     }
 
     /// Create a new handler with `NewMessage` update type
-    pub fn new_message(func: impl AsyncFn, filter: impl Filter) -> Self {
+    pub fn new_message<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::NewMessage, func, filter)
     }
 
     /// Create a new handler with `MessageEdited` update type
-    pub fn message_edited(func: impl AsyncFn, filter: impl Filter) -> Self {
+    pub fn message_edited<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::MessageEdited, func, filter)
     }
 
     /// Create a new handler with `MessageDeleted` update type
-    pub fn message_deleted(func: impl AsyncFn, filter: impl Filter) -> Self {
+    pub fn message_deleted<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::MessageDeleted, func, filter)
     }
 
     /// Create a new handler with `CallbackQuery` update type
-    pub fn callback_query(func: impl AsyncFn, filter: impl Filter) -> Self {
+    pub fn callback_query<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::CallbackQuery, func, filter)
     }
 
     /// Create a new handler with `InlineQuery` update type
-    pub fn inline_query(func: impl AsyncFn, filter: impl Filter) -> Self {
+    pub fn inline_query<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::InlineQuery, func, filter)
     }
 
     /// Create a new handler with `Raw` update type
-    pub fn raw(func: impl AsyncFn, filter: impl Filter) -> Self {
+    pub fn raw<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::Raw, func, filter)
     }
 

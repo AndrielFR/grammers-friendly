@@ -18,7 +18,17 @@ pub mod utils;
 pub use data::Data;
 pub use dispatcher::Dispatcher;
 pub use handler::{Handler, UpdateType};
-pub use middleware::{MiddleWareType, Middleware};
+pub use middleware::{Middleware, MiddlewareType};
 
 #[cfg(feature = "macros")]
 pub use grammers_macros as macros;
+
+pub mod prelude {
+    pub use crate::traits::*;
+    pub use crate::{
+        filters, utils, Data, Dispatcher, Handler, Middleware, MiddlewareType::*, UpdateType::*,
+    };
+
+    #[cfg(feature = "macros")]
+    pub use crate::macros;
+}

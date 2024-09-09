@@ -21,7 +21,7 @@ impl Data {
     }
 
     /// Attach a new module
-    pub(crate) fn add_module(&mut self, module: impl Module + Send + Sync + 'static) {
+    pub(crate) fn add_module<M: Module>(&mut self, module: M) {
         self.modules.push(Box::new(module));
     }
 
@@ -31,9 +31,9 @@ impl Data {
     }
 
     /// Get a module and downcast it
-    pub fn get_module<T: Module>(&self) -> Option<Box<T>> {
+    pub fn get_module<M: Module>(&self) -> Option<Box<M>> {
         self.modules
             .iter()
-            .find_map(|module| module.clone().downcast::<T>().ok())
+            .find_map(|module| module.clone().downcast::<M>().ok())
     }
 }

@@ -12,7 +12,7 @@ use async_recursion::async_recursion;
 use futures_util::future::{select, Either};
 use grammers_client::{Client, Update};
 
-use crate::{traits::Module, Data, Handler, Middleware};
+use crate::{traits::Module, Data, Handler, Middleware, MiddlewareType};
 
 /// Dispatcher used to register handlers, middlewares and routers
 #[derive(Default)]
@@ -37,7 +37,7 @@ impl Dispatcher {
     }
 
     /// Attach a new module to the dispatcher
-    pub fn add_module(mut self, module: impl Module) -> Self {
+    pub fn add_module<M: Module>(mut self, module: M) -> Self {
         self.data.add_module(module);
         self
     }
@@ -98,10 +98,13 @@ pub(crate) async fn handle_update(
         let mut update = update.clone();
 
         scope.spawn(async move {
-            for module in (data.modules).iter_mut() {
-                let r = module.ante_call(&mut client, &mut update).await;
+            for middleware in middlewares
+                .iter_mut()
+                .filter(|m| m.mtype() == MiddlewareType::Before)
+            {
+                let r = middleware.call(&mut client, &mut update, data).await;
                 if let Err(e) = r {
-                    log::error!("Error running module ante call: {}", e);
+                    log::error!("Error running middleware: {}", e);
                 }
             }
 
@@ -112,19 +115,13 @@ pub(crate) async fn handle_update(
                 }
             }
 
-            if !update_handled {
-                for middleware in middlewares.iter_mut() {
-                    if middleware.handle(&mut client, &mut update, data).await {
-                        update_handled = true;
-                        break;
-                    }
-                }
-            }
-
-            for module in (data.modules).iter_mut() {
-                let r = module.post_call(&mut client, &mut update).await;
+            for middleware in middlewares
+                .iter_mut()
+                .filter(|m| m.mtype() == MiddlewareType::After)
+            {
+                let r = middleware.call(&mut client, &mut update, data).await;
                 if let Err(e) = r {
-                    log::error!("Error running module post call: {}", e);
+                    log::error!("Error running middleware: {}", e);
                 }
             }
 

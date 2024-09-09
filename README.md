@@ -21,7 +21,7 @@ grammers-friendly = { git = "https://github.com/AndrielFR/grammers-friendly" }
 
 You can use the dispatcher like this:
 ```rust
-use grammers_friendly::{filters, Dispatcher, Handler};
+use grammers_friendly::prelude::*;
 
 use crate::modules::I18n;
 
@@ -41,7 +41,7 @@ It will just listen to every update sent by Telegram.
 You can create handlers easy peazy.
 ```rust
 use grammers_client::{Client, InputMessage, Update};
-use grammers_friendly::{filters, traits::GetMessage, Data, Handler};
+use grammers_friendly::prelude::*;
 
 use crate::modules::I18n;
 
@@ -61,49 +61,6 @@ async fn test_handler(_client: Client, update: Update, data: Data) -> Result<(),
     Ok(())
 }
 ```
-
-### Modules
-
-You can create modules to work it before the handler runs, while runs it or after runs it.
-
-Like the example below:
-```rust
-use async_trait::async_trait;
-use grammers_client::{Client, Update};
-use grammers_friendly::traits::Module;
-
-pub struct I18n {
-    lang: String,
-}
-
-impl I18n {
-    pub fn new(lang: &str) -> Self {
-        Self { lang }
-    }
-
-    pub fn get(&self, key: &str) -> String {
-        ...
-    }
-
-    pub fn set_lang(&mut self, lang: &str) {
-        self.lang = lang
-    }
-}
-
-#[async_trait]
-impl Module for I18n {
-    /// Before the handler
-    async fn ante_call(&mut self, _client: &mut Client, update: &mut Update) -> Result<(), Box<dyn std::error::Error> {
-        self.set_lang("en-GB");
-    }
-
-    /// After the handler
-    async fn post_call(&mut self, _client: &mut Client, _update: &mut Update) -> Result<(), Box<dyn std::error::Error> {
-        Ok(())
-    }
-```
-
-Unfortunately, we need to rely on [async-trait] to it.
 
 ## License
 
