@@ -24,12 +24,12 @@ pub struct CommandFilter {
 }
 
 impl CommandFilter {
-    pub fn new(prefixes: &str, command: &str) -> Self {
+    pub fn new(prefixes: impl Into<String>, command: impl Into<String>) -> Self {
         Self {
             is_bot: true,
 
-            prefixes: prefixes.to_string(),
-            command: command.trim().to_string(),
+            prefixes: prefixes.into(),
+            command: command.into(),
 
             username: None,
         }

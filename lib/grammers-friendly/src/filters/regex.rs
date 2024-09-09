@@ -15,13 +15,13 @@ use crate::traits::{Filter, GetMessage, GetQuery};
 /// Ok if `regex` match
 #[derive(Clone)]
 pub struct RegexFilter {
-    regex: Regex,
+    pattern: Regex,
 }
 
 impl RegexFilter {
-    pub fn new(regex: &str) -> Self {
+    pub fn new(pattern: impl Into<String>) -> Self {
         Self {
-            regex: Regex::new(regex).unwrap(),
+            pattern: Regex::new(&pattern.into()).unwrap(),
         }
     }
 }
@@ -40,11 +40,11 @@ impl Filter for RegexFilter {
             text = String::from_utf8(query.data().to_vec()).unwrap();
         }
 
-        return self.regex.is_match(&text);
+        return self.pattern.is_match(&text);
     }
 }
 
 /// Ok if `regex` match
-pub fn regex(regex: &str) -> RegexFilter {
-    RegexFilter::new(regex)
+pub fn regex(pattern: &str) -> RegexFilter {
+    RegexFilter::new(pattern)
 }

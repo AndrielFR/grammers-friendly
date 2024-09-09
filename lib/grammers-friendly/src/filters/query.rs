@@ -19,7 +19,8 @@ pub struct QueryFilter {
 }
 
 impl QueryFilter {
-    pub fn new(query: String) -> Self {
+    pub fn new(query: impl Into<String>) -> Self {
+        let query = query.into();
         let mut new_query = Vec::new();
 
         query
@@ -73,7 +74,6 @@ impl QueryFilter {
             });
 
         let query = new_query.join(r"\s");
-        println!("{}", query);
         Self {
             query: Regex::new(&query).unwrap(),
         }
@@ -95,6 +95,6 @@ impl Filter for QueryFilter {
     }
 }
 
-pub fn query(query: impl Into<String>) -> QueryFilter {
-    QueryFilter::new(query.into())
+pub fn query(query: &str) -> QueryFilter {
+    QueryFilter::new(query)
 }

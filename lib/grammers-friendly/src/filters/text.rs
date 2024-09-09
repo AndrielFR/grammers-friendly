@@ -18,10 +18,8 @@ pub struct TextFilter {
 }
 
 impl TextFilter {
-    pub fn new(text: &str) -> Self {
-        Self {
-            text: text.to_string(),
-        }
+    pub fn new(text: impl Into<String>) -> Self {
+        Self { text: text.into() }
     }
 }
 
