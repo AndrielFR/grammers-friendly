@@ -13,6 +13,7 @@ mod edited;
 mod not;
 mod or;
 mod private;
+mod query;
 mod regex;
 mod text;
 
@@ -23,5 +24,6 @@ pub use edited::*;
 pub use not::*;
 pub use or::*;
 pub use private::*;
+pub use query::*;
 pub use regex::*;
 pub use text::*;
