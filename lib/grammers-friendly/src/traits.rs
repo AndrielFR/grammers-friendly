@@ -94,7 +94,12 @@ impl Clone for Box<dyn Filter> {
 /// Middleware
 #[async_trait]
 pub trait MiddlewareImpl: CloneMiddlewareImpl + Send + Sync + 'static {
-    async fn call(&self, client: Client, update: Update) -> Result<(), Box<dyn std::error::Error>>;
+    async fn call(
+        &self,
+        client: &mut Client,
+        update: &mut Update,
+        data: &mut Data,
+    ) -> Result<(), Box<dyn std::error::Error>>;
 }
 
 pub trait CloneMiddlewareImpl {

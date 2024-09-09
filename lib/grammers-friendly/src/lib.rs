@@ -18,7 +18,7 @@ pub mod utils;
 pub use data::Data;
 pub use dispatcher::Dispatcher;
 pub use handler::{Handler, UpdateType};
-pub use middleware::Middleware;
+pub use middleware::{MiddleWareType, Middleware};
 
 #[cfg(feature = "macros")]
 pub use grammers_macros as macros;
