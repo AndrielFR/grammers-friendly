@@ -16,6 +16,7 @@ mod or;
 mod private;
 mod query;
 mod regex;
+mod reply;
 mod text;
 
 pub use admin::*;
@@ -28,4 +29,5 @@ pub use or::*;
 pub use private::*;
 pub use query::*;
 pub use regex::*;
+pub use reply::*;
 pub use text::*;
