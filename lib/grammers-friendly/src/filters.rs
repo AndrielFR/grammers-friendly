@@ -9,6 +9,7 @@
 mod admin;
 mod and;
 mod command;
+mod custom;
 mod edited;
 mod not;
 mod or;
@@ -20,6 +21,7 @@ mod text;
 pub use admin::*;
 pub use and::*;
 pub use command::*;
+pub use custom::*;
 pub use edited::*;
 pub use not::*;
 pub use or::*;
