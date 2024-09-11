@@ -6,8 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use std::cmp::Ordering;
+
 use grammers_client::{
-    button::Inline,
+    button::{self, Inline},
     types::{CallbackQuery, Chat, Message},
     Update,
 };
@@ -100,4 +102,59 @@ pub fn split_query<Q: Into<Vec<u8>>>(query: Q) -> Vec<String> {
         });
 
     splitted
+}
+
+pub fn gen_page_buttons(
+    current_page: i64,
+    total_pages: i64,
+    query: impl Into<String>,
+    max_buttons: i64,
+) -> Vec<Inline> {
+    let mut buttons = Vec::with_capacity(max_buttons as usize);
+    let query = query.into();
+
+    let start_symbol = '⮜';
+    let previous_symbol = '⮘';
+    let current_symbol = '⮟';
+    let next_symbol = '⮚';
+    let end_symbol = '⮞';
+
+    let start = (current_page - (max_buttons / 2)).max(1);
+    let end = (start + max_buttons - 1).min(total_pages);
+
+    if start > max_buttons {
+        buttons.push(button::inline(
+            format!("{0} {1}", start_symbol, 1),
+            query.replace(":page:", "1"),
+        ));
+    }
+
+    for page in start..=end {
+        let callback = query.replace(":page:", &page.to_string());
+
+        match page.cmp(&current_page) {
+            Ordering::Greater => buttons.push(button::inline(
+                format!("{0} {1}", next_symbol, page),
+                callback.clone(),
+            )),
+            Ordering::Less => buttons.push(button::inline(
+                format!("{0} {1}", previous_symbol, page),
+                callback.clone(),
+            )),
+
+            Ordering::Equal => buttons.push(button::inline(
+                format!("{0} {1}", current_symbol, page),
+                callback.clone(),
+            )),
+        }
+    }
+
+    if end < total_pages {
+        buttons.push(button::inline(
+            format!("{0} {1}", end_symbol, total_pages),
+            query.replace(":page:", &total_pages.to_string()),
+        ));
+    }
+
+    buttons
 }
