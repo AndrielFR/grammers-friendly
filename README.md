@@ -2,10 +2,6 @@
 
 A couple of Rust libraries to make writing bots to Telegram with [grammers] easier.
 
-## Current status
-
-Working nice.
-
 ## Install
 
 Just put the code below to your `Cargo.toml`:
