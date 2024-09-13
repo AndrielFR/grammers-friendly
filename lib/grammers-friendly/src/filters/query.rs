@@ -10,9 +10,13 @@ use async_trait::async_trait;
 use grammers_client::{Client, Update};
 use regex::Regex;
 
-use crate::traits::{Filter, GetQuery};
+use crate::traits::{Filter, GetMessage, GetQuery};
 
-/// Ok if regex match
+/// Query filter.
+///
+/// Pass if `query` match.
+///
+/// It's just a beautiful regex.
 #[derive(Clone)]
 pub struct QueryFilter {
     query: Regex,
@@ -54,8 +58,7 @@ impl QueryFilter {
                         "str" => r"\w+",
                         "sym" => r"\W+",
                         "bool" => "[true|false|yes|no|1|0]",
-                        "float" => r"\d+\.\d+",
-                        "double" => r"\d+\.\d+",
+                        "float" | "double" => r"\d+\.\d+",
                         _ => "",
                     }
                     .to_string();
@@ -83,18 +86,24 @@ impl QueryFilter {
 #[async_trait]
 impl Filter for QueryFilter {
     async fn is_ok(&mut self, _client: &Client, update: &Update) -> bool {
+        let message = update.get_message();
         let query = update.get_query();
 
-        if let Some(query) = query {
-            let text = String::from_utf8(query.data().into()).unwrap();
+        let mut text = String::new();
 
-            return self.query.is_match(&text);
+        if let Some(message) = message {
+            text = message.text().to_string();
+        } else if let Some(query) = query {
+            text = String::from_utf8(query.data().into()).unwrap();
         }
 
-        false
+        self.query.is_match(&text)
     }
 }
 
+/// Pass if `query` match.
+///
+/// It's just a beautiful regex.
 pub fn query(query: &str) -> QueryFilter {
     QueryFilter::new(query)
 }

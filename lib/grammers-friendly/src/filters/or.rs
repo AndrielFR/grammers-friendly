@@ -11,7 +11,9 @@ use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
 
-/// Ok if `first` or `other` is ok
+/// Or filter.
+///
+/// Pass if `first` or `other` pass.
 #[derive(Clone)]
 pub struct OrFilter {
     first: Box<dyn Filter>,
@@ -34,7 +36,7 @@ impl Filter for OrFilter {
     }
 }
 
-/// Ok if `first` or `other` is ok
+/// Pass if `first` or `other` pass.
 pub fn or(first: impl Filter, other: impl Filter) -> OrFilter {
     OrFilter::new(first, other)
 }

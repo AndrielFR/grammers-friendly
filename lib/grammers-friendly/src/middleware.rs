@@ -10,6 +10,10 @@ use grammers_client::{Client, Update};
 
 use crate::{traits::MiddlewareImpl, Data};
 
+/// A Middleware.
+///
+/// Can be before-type of after-type, which implies that it will be runned before
+/// Or after the handlers.
 #[derive(Clone)]
 pub struct Middleware {
     pub mid: Box<dyn MiddlewareImpl>,
@@ -17,6 +21,12 @@ pub struct Middleware {
 }
 
 impl Middleware {
+    /// Construct a new `Middleware`.
+    ///
+    /// Receives a struct which implements [`MiddlewareImpl`] and [`MiddlewareType`].
+    ///
+    /// [`MiddlewareImpl`]: crate::MiddlewareImpl
+    /// [`MiddlewareType`]: crate::MiddlewareType
     pub fn new<M: MiddlewareImpl>(mid: M, mtype: MiddlewareType) -> Self {
         Self {
             mid: Box::new(mid),
@@ -24,20 +34,38 @@ impl Middleware {
         }
     }
 
-    pub async fn call(
-        &mut self,
-        client: &mut Client,
-        update: &mut Update,
-        data: &mut Data,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let r = self.mid.call(client, update, data).await;
-        if let Err(e) = r {
-            log::error!("Error in middleware: {:?}", e);
+    /// Construct a new before-type `Middleware`.
+    ///
+    /// Receives a struct which implements [`MiddlewareImpl`].
+    ///
+    /// [`MiddlewareImpl`]: crate::MiddlewareImpl
+    pub fn before<M: MiddlewareImpl>(mid: M) -> Self {
+        Self {
+            mid: Box::new(mid),
+            mtype: MiddlewareType::Before,
         }
-
-        Ok(())
     }
 
+    /// Construct a new after-type `Middleware`.
+    ///
+    /// Receives a struct which implements [`MiddlewareImpl`].
+    ///
+    /// [`MiddlewareImpl`]: crate::MiddlewareImpl
+    pub fn after<M: MiddlewareImpl>(mid: M) -> Self {
+        Self {
+            mid: Box::new(mid),
+            mtype: MiddlewareType::After,
+        }
+    }
+
+    /// Run the middleware.
+    pub(crate) async fn call(&mut self, client: &mut Client, update: &mut Update, data: &mut Data) {
+        if let Err(e) = self.mid.call(client, update, data).await {
+            log::error!("Error while running middleware: {:?}", e);
+        }
+    }
+
+    /// Get the middleware type.
     pub fn mtype(&self) -> MiddlewareType {
         self.mtype.clone()
     }

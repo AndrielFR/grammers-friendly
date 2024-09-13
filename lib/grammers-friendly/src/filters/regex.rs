@@ -12,7 +12,9 @@ use regex::Regex;
 
 use crate::traits::{Filter, GetMessage, GetQuery};
 
-/// Ok if `regex` match
+/// Regex filter.
+///
+/// Pass if `pattern` match.
 #[derive(Clone)]
 pub struct RegexFilter {
     pattern: Regex,
@@ -44,7 +46,7 @@ impl Filter for RegexFilter {
     }
 }
 
-/// Ok if `regex` match
+/// Pass if `pattern` match.
 pub fn regex(pattern: &str) -> RegexFilter {
     RegexFilter::new(pattern)
 }

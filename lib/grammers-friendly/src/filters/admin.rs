@@ -13,7 +13,12 @@ use grammers_client::{client::chats::ParticipantPermissions, Client, Update};
 
 use crate::traits::{Filter, GetChat, GetSender};
 
-/// Ok if user has admin rights
+/// Admin filter.
+///
+/// Checks for user perms in chat.
+/// Pass if user has admin rights.
+///
+/// Has internal cache.
 #[derive(Clone, Default)]
 pub struct AdminFilter {
     perms: HashMap<i64, HashMap<i64, ParticipantPermissions>>,
@@ -57,7 +62,10 @@ impl Filter for AdminFilter {
     }
 }
 
-/// Ok if user has admin rights
+/// Checks for user perms in chat.
+/// Pass if user has admin rights.
+///
+/// Has internal cache.
 pub fn admin() -> AdminFilter {
     AdminFilter::default()
 }

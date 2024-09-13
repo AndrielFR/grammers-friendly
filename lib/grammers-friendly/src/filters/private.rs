@@ -11,7 +11,9 @@ use grammers_client::{types::Chat, Client, Update};
 
 use crate::traits::{Filter, GetChat};
 
-/// Ok if the chat is private (user/bot to user)
+/// Private filter.
+///
+/// Pass if chat is a `user` or `bot`.
 #[derive(Clone)]
 pub struct PrivateFilter;
 
@@ -31,7 +33,7 @@ impl Filter for PrivateFilter {
     }
 }
 
-/// Ok if the chat is private (user/bot to user)
+/// Pass if chat is a `user` or `bot`.
 pub fn private() -> PrivateFilter {
     PrivateFilter
 }

@@ -11,7 +11,10 @@ use grammers_client::{Client, Update};
 
 use crate::traits::{Filter, GetMessage};
 
-/// Ok if message is reply to another message
+/// Reply filter.
+///
+/// `true` => message is a reply to another message,
+/// `false` => negates above.
 #[derive(Clone)]
 pub struct ReplyFilter;
 
@@ -28,6 +31,8 @@ impl Filter for ReplyFilter {
     }
 }
 
+/// `true` => message is a reply to another message,
+/// `false` => negates above.
 pub fn reply() -> ReplyFilter {
     ReplyFilter
 }

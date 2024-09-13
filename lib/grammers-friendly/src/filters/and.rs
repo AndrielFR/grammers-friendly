@@ -11,7 +11,9 @@ use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
 
-/// Ok if `first` and `second` is ok
+/// And filter.
+///
+/// Pass if `first` and `other` pass.
 #[derive(Clone)]
 pub struct AndFilter {
     first: Box<dyn Filter>,
@@ -34,7 +36,7 @@ impl Filter for AndFilter {
     }
 }
 
-/// Ok if `first` and `second` is ok
+/// Pass if `first` and `other` pass.
 pub fn and(first: impl Filter, second: impl Filter) -> AndFilter {
     AndFilter::new(first, second)
 }

@@ -30,7 +30,14 @@ where
     }
 }
 
-/// A custom filter, accepts a async closure
+/// Custom filter.
+///
+/// Receives an async closure,
+/// Fn(&Client, &Update) -> bool
+///
+/// Pass if `func` returns `true`.
+///
+/// Unique filter that receives owned values.
 #[derive(Clone)]
 pub struct CustomFilter {
     func: Arc<dyn CustomFilterFn>,
@@ -54,6 +61,12 @@ impl Filter for CustomFilter {
     }
 }
 
+/// Receives an async closure,
+/// Fn(&Client, &Update) -> bool
+///
+/// Pass if `func` returns `true`.
+///
+/// Unique filter that receives owned values.
 pub fn custom<F>(func: F) -> CustomFilter
 where
     F: CustomFilterFn,

@@ -11,21 +11,27 @@ use std::sync::Arc;
 use grammers_client::{Client, Update};
 
 use crate::{
-    traits::{AsyncFn, Filter},
+    traits::{AsyncFnCallback, Filter},
     Data,
 };
 
-/// Use the Handler struct to create a new handler. The handle method is used to run the function if the filters pass.
+/// A Handler.
+///
+/// Will be runned after before-type `middlewares`.
 #[derive(Clone)]
 pub struct Handler {
-    func: Arc<dyn AsyncFn>,
+    func: Arc<dyn AsyncFnCallback>,
     filter: Box<dyn Filter>,
     update_type: UpdateType,
 }
 
 impl Handler {
-    /// Create a new handler
-    pub fn new<A: AsyncFn, F: Filter>(update_type: UpdateType, func: A, filter: F) -> Self {
+    /// Construct a new handler.
+    ///
+    /// Receives a [`UpdateType`], `Fn(&mut Client, &mut Update, &mut Data)` and its filter.
+    ///
+    /// [`UpdateType`]: crate::UpdateType
+    pub fn new<A: AsyncFnCallback, F: Filter>(update_type: UpdateType, func: A, filter: F) -> Self {
         Self {
             func: Arc::new(func),
             filter: Box::new(filter),
@@ -33,38 +39,63 @@ impl Handler {
         }
     }
 
-    /// Create a new handler with `NewMessage` update type
-    pub fn new_message<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
+    /// Construct a new handler with `NewMessage` update type.
+    ///
+    /// Receives a Fn(&mut Client, &mut Update, &mut Data)` and its filter.
+    pub fn new_message<A: AsyncFnCallback, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::NewMessage, func, filter)
     }
 
-    /// Create a new handler with `MessageEdited` update type
-    pub fn message_edited<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
+    /// Construct a new handler with `MessageEdited` update type.
+    ///
+    /// Receives a Fn(&mut Client, &mut Update, &mut Data)` and its filter.
+    pub fn message_edited<A: AsyncFnCallback, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::MessageEdited, func, filter)
     }
 
-    /// Create a new handler with `MessageDeleted` update type
-    pub fn message_deleted<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
+    /// Construct a new handler with `MessageDeleted` update type.
+    ///
+    /// Receives a Fn(&mut Client, &mut Update, &mut Data)` and its filter.
+    pub fn message_deleted<A: AsyncFnCallback, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::MessageDeleted, func, filter)
     }
 
-    /// Create a new handler with `CallbackQuery` update type
-    pub fn callback_query<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
+    /// Construct a new handler with `CallbackQuery` update type.
+    ///
+    /// Receives a Fn(&mut Client, &mut Update, &mut Data)` and its filter.
+    pub fn callback_query<A: AsyncFnCallback, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::CallbackQuery, func, filter)
     }
 
-    /// Create a new handler with `InlineQuery` update type
-    pub fn inline_query<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
+    /// Construct a new handler with `InlineQuery` update type.
+    ///
+    /// Receives a Fn(&mut Client, &mut Update, &mut Data)` and its filter.
+    pub fn inline_query<A: AsyncFnCallback, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::InlineQuery, func, filter)
     }
 
-    /// Create a new handler with `Raw` update type
-    pub fn raw<A: AsyncFn, F: Filter>(func: A, filter: F) -> Self {
+    /// Construct a new handler with `Raw` update type.
+    ///
+    /// Receives a Fn(&mut Client, &mut Update, &mut Data)` and its filter.
+    pub fn raw<A: AsyncFnCallback, F: Filter>(func: A, filter: F) -> Self {
         Self::new(UpdateType::Raw, func, filter)
     }
 
-    /// Check all the filters and if ok, run the func
-    pub async fn handle(&mut self, client: &Client, update: &Update, data: &Data) -> bool {
+    /// Handle the update.
+    ///
+    /// First checks if [`UpdateType`] match,
+    /// So, checks if its `filter` match and
+    /// Lastly, if all ok, run the `function`.
+    ///
+    /// Return `True` if handled or `False` otherwise.
+    ///
+    /// [`UpdateType`]: crate::UpdateType
+    pub async fn handle(
+        &mut self,
+        client: &mut Client,
+        update: &mut Update,
+        data: &mut Data,
+    ) -> bool {
         if matches!(self.update_type, UpdateType::NewMessage)
             && matches!(update, Update::NewMessage(_))
             || matches!(self.update_type, UpdateType::MessageEdited)
@@ -77,16 +108,12 @@ impl Handler {
                 && matches!(update, Update::InlineQuery(_))
             || matches!(self.update_type, UpdateType::Raw)
         {
-            if !self.filter.is_ok(client, update).await {
+            if !self.filter.is_ok(&*client, &*update).await {
                 return false;
             }
 
-            let r = self
-                .func
-                .call(client.clone(), update.clone(), data.clone())
-                .await;
-            if let Err(e) = r {
-                log::error!("Error running handler: {}", e);
+            if let Err(e) = self.func.call(client, update, data).await {
+                log::error!("Error while running handler: {}", e);
             }
 
             return true;
@@ -95,7 +122,11 @@ impl Handler {
     }
 }
 
-/// Just the update type
+/// Update Type.
+///
+/// In thesis, you don't need to use this,
+/// Just use its constructer: `::new_message(...)`, `::message_edited(...)`, `::message_deleted(...)`,
+/// `::callback_query(...)`, `::inline_query(...)` and/or `::raw(...)`
 #[derive(Clone)]
 pub enum UpdateType {
     NewMessage,

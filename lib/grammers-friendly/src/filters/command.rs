@@ -12,7 +12,9 @@ use regex::Regex;
 
 use crate::traits::{Filter, GetMessage};
 
-/// Ok if message starts by `command`
+/// Command filter.
+///
+/// Pass if `command` match.
 #[derive(Clone)]
 pub struct CommandFilter {
     is_bot: bool,
@@ -86,7 +88,7 @@ impl Filter for CommandFilter {
     }
 }
 
-/// Ok if message starts by `command`
+/// Pass if `command` match.
 pub fn command(prefixes: &str, command: &str) -> CommandFilter {
     CommandFilter::new(prefixes, command)
 }

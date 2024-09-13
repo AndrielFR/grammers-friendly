@@ -11,7 +11,9 @@ use grammers_client::{Client, Update};
 
 use crate::traits::Filter;
 
-/// Ok if message is edited
+/// Edited filter.
+///
+/// Pass if message is edited.
 #[derive(Clone)]
 pub struct EditedFilter;
 
@@ -22,7 +24,7 @@ impl Filter for EditedFilter {
     }
 }
 
-/// Ok if message is edited
+/// Pass if message is edited.
 pub fn edited() -> EditedFilter {
     EditedFilter
 }

@@ -6,11 +6,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::pin::Pin;
-
 use async_trait::async_trait;
 use downcast_rs::{impl_downcast, DowncastSync};
-use futures_util::Future;
+use futures_util::{future::BoxFuture, Future};
 use grammers_client::{
     types::{CallbackQuery, Chat, Message},
     Client, Update,
@@ -21,30 +19,41 @@ use crate::{
     utils, Data,
 };
 
-type PinBox =
-    Pin<Box<dyn Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static>>;
-
 /// The async `func` from handlers
-pub trait AsyncFn: Send + Sync + 'static {
-    fn call(&self, client: Client, update: Update, data: Data) -> PinBox;
+pub trait AsyncFn<'a>: Send + Sync + 'static {
+    fn call(
+        &'a self,
+        client: &'a mut Client,
+        update: &'a mut Update,
+        data: &'a mut Data,
+    ) -> BoxFuture<'a, Result<(), Box<dyn std::error::Error>>>;
 }
 
-impl<T, F> AsyncFn for T
+impl<'a, T: ?Sized, F> AsyncFn<'a> for T
 where
-    T: Fn(Client, Update, Data) -> F + Send + Sync + 'static,
-    F: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'static,
+    T: Fn(&'a mut Client, &'a mut Update, &'a mut Data) -> F + Send + Sync + 'static,
+    F: Future<Output = Result<(), Box<dyn std::error::Error>>> + Send + 'a,
 {
-    fn call(&self, client: Client, update: Update, data: Data) -> PinBox {
+    fn call(
+        &'a self,
+        client: &'a mut Client,
+        update: &'a mut Update,
+        data: &'a mut Data,
+    ) -> BoxFuture<Result<(), Box<dyn std::error::Error>>> {
         Box::pin(self(client, update, data))
     }
 }
+
+pub trait AsyncFnCallback: for<'any> AsyncFn<'any> {}
+
+impl<T> AsyncFnCallback for T where for<'any> T: AsyncFn<'any> {}
 
 /// Filter
 #[async_trait]
 pub trait Filter: CloneFilter + Send + Sync + 'static {
     /// Needs to return bool
-    /// `True` -> pass
-    /// `False` -> not pass
+    /// `true` -> pass
+    /// `false` -> not pass
     async fn is_ok(&mut self, client: &Client, update: &Update) -> bool;
 
     /// Wrappes `self` and `second` into `AndFilter`
