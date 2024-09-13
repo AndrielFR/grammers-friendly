@@ -1,15 +1,12 @@
 # grammers-friendly
 
-A set of Rust libraries to make writing bots to Telegram with [grammers] easier.
+A couple of Rust libraries to make writing bots to Telegram with [grammers] easier.
 
 ## Current status
 
-Just working.
+Working nice.
 
-
-## How to use
-
-### Installing
+## Install
 
 Just put the code below to your `Cargo.toml`:
 
@@ -17,50 +14,12 @@ Just put the code below to your `Cargo.toml`:
 grammers-friendly = { git = "https://github.com/AndrielFR/grammers-friendly" }
 ```
 
-### Dispatcher
+## Examples
 
-You can use the dispatcher like this:
-```rust
-use grammers_friendly::prelude::*;
+The library is currently used in theses projects below:
 
-use crate::modules::I18n;
-
-    ...
-    Dispatcher::default()
-        .add_module(I18n::new("pt-BR"))
-        .add_handler(Handler::new_message(test_handler, filters::text("hi!")))
-        .run(client.clone())
-        .await?;
-    ...
-```
-
-It will just listen to every update sent by Telegram.
-
-### Handlers
-
-You can create handlers easy peazy.
-```rust
-use grammers_client::{Client, InputMessage, Update};
-use grammers_friendly::prelude::*;
-
-use crate::modules::I18n;
-
-    ...
-    let handler = Handler::new_message(test_handler, filters::text("hi!"))
-    ...
-
-async fn test_handler(_client: Client, update: Update, data: Data) -> Result<(), Box<dyn std::error::Error> {
-    // Get the I18n module
-    let i18n = data.get_module::<I18n>().unwrap();
-    let t = |key: &str| = i18n.get(key);
-
-    let message = update.get_message().unwrap();
-
-    message.reply(InputMessage::text(t("hello"))).await?;
-
-    Ok(())
-}
-```
+- [holy-maiden-bot]: a otaku bot for collecting anime characters (waifus/husbandos).
+- [Hitsuki]: a group management bot.
 
 ## License
 
@@ -84,7 +43,8 @@ Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
 
-[async-trait]: https://github.com/dtolnay/async-trait
+[holy-maiden-bot]: https://github.com/AndrielFR/holy-maiden-bot
+[Hitsuki]: https://github.com/HitaloM/Hitsuki
 
 [grammers]: https://github.com/Lonami/grammers
 [LICENSE-APACHE]: LICENSE-APACHE
