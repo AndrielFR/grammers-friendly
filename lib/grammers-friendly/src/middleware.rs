@@ -25,7 +25,7 @@ impl Middleware {
     ///
     /// Receives a struct which implements [`MiddlewareImpl`] and [`MiddlewareType`].
     ///
-    /// [`MiddlewareImpl`]: crate::MiddlewareImpl
+    /// [`MiddlewareImpl`]: crate::traits::MiddlewareImpl
     /// [`MiddlewareType`]: crate::MiddlewareType
     pub fn new<M: MiddlewareImpl>(mid: M, mtype: MiddlewareType) -> Self {
         Self {
@@ -38,7 +38,7 @@ impl Middleware {
     ///
     /// Receives a struct which implements [`MiddlewareImpl`].
     ///
-    /// [`MiddlewareImpl`]: crate::MiddlewareImpl
+    /// [`MiddlewareImpl`]: crate::traits::MiddlewareImpl
     pub fn before<M: MiddlewareImpl>(mid: M) -> Self {
         Self {
             mid: Box::new(mid),
@@ -50,7 +50,7 @@ impl Middleware {
     ///
     /// Receives a struct which implements [`MiddlewareImpl`].
     ///
-    /// [`MiddlewareImpl`]: crate::MiddlewareImpl
+    /// [`MiddlewareImpl`]: crate::traits::MiddlewareImpl
     pub fn after<M: MiddlewareImpl>(mid: M) -> Self {
         Self {
             mid: Box::new(mid),
@@ -71,6 +71,12 @@ impl Middleware {
     }
 }
 
+/// Middleware Type.
+///
+/// In thesis, you don't need to use this,
+/// Just use [`Middleware`] constructors: `::before(...)`, and/or `::after(...)`.
+///
+/// [`Middleware`]: crate::Middleware
 #[derive(Clone, PartialEq)]
 pub enum MiddlewareType {
     Before,
