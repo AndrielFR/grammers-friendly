@@ -125,8 +125,10 @@ impl Handler {
 /// Update Type.
 ///
 /// In thesis, you don't need to use this,
-/// Just use its constructer: `::new_message(...)`, `::message_edited(...)`, `::message_deleted(...)`,
+/// Just use [`Handler`] constructors: `::new_message(...)`, `::message_edited(...)`, `::message_deleted(...)`,
 /// `::callback_query(...)`, `::inline_query(...)` and/or `::raw(...)`
+///
+/// [`Handler`]: crate::Handler
 #[derive(Clone)]
 pub enum UpdateType {
     NewMessage,
