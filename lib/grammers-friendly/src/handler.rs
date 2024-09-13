@@ -131,10 +131,21 @@ impl Handler {
 /// [`Handler`]: crate::Handler
 #[derive(Clone)]
 pub enum UpdateType {
+    /// Just listen to new messages.
     NewMessage,
+
+    /// Just listen to edited messages.
     MessageEdited,
+
+    /// Just listen to deleted messages.
     MessageDeleted,
+
+    /// Just listen to callback query.
     CallbackQuery,
+
+    /// Just listen to inline query.
     InlineQuery,
+
+    /// Listen to all updates in its raw form.
     Raw,
 }

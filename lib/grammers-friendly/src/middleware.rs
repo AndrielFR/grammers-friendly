@@ -79,6 +79,9 @@ impl Middleware {
 /// [`Middleware`]: crate::Middleware
 #[derive(Clone, PartialEq)]
 pub enum MiddlewareType {
+    /// Runned before any `handler` in the same `router`.
     Before,
+
+    /// Runned after all `handlers` in the same `router`.
     After,
 }
