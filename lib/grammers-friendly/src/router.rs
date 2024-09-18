@@ -9,7 +9,7 @@
 use async_recursion::async_recursion;
 use grammers_client::{Client, Update};
 
-use crate::{traits::Module, Data, Handler, Middleware, MiddlewareType};
+use crate::{traits::Module, Data, Handler, Middleware};
 
 /// A Router, like a sub-disptacher.
 ///
@@ -49,6 +49,13 @@ impl Router {
         self
     }
 
+    /// Attach a new middleware to the router.
+    ///
+    /// Which will be runned before or after each `handler`.
+    pub(crate) fn push_middleware(&mut self, middleware: Middleware) {
+        self.middlewares.push(middleware);
+    }
+
     /// Attach a new boxed module to the router.
     ///
     /// Which will be sent a mutable reference for each `middleware` and `handler`.
@@ -60,8 +67,14 @@ impl Router {
     ///
     /// Which will be runned if the current router don't handle the update.
     pub fn add_sub_router(mut self, mut sub_router: Router) -> Self {
-        self.data.modules().into_iter().for_each(|module| {
-            sub_router.data.push_module(module);
+        // Send a clone of each module to the sub-router
+        self.data.modules.clone().into_iter().for_each(|module| {
+            sub_router.push_module(module);
+        });
+
+        // Send a clone of each middleware to the sub-router
+        self.middlewares.clone().into_iter().for_each(|middleware| {
+            sub_router.push_middleware(middleware);
         });
 
         self.sub_routers.push(sub_router);
@@ -79,29 +92,15 @@ impl Router {
         moro::async_scope!(|scope| {
             let data = &mut self.data;
             let handlers = &mut self.handlers;
-            let middlewares = &mut self.middlewares;
             let sub_routers = &mut self.sub_routers;
+            let middlewares = &mut self.middlewares;
 
             scope.spawn(async move {
-                for middleware in middlewares
-                    .iter_mut()
-                    .filter(|m| m.mtype() == MiddlewareType::Before)
-                {
-                    middleware.call(client, update, data).await;
-                }
-
                 for handler in handlers.iter_mut() {
-                    if handler.handle(client, update, data).await {
+                    if handler.handle(client, update, data, middlewares).await {
                         update_handled = true;
                         break;
                     }
-                }
-
-                for middleware in middlewares
-                    .iter_mut()
-                    .filter(|m| m.mtype() == MiddlewareType::After)
-                {
-                    middleware.call(client, update, data).await;
                 }
 
                 if !update_handled {

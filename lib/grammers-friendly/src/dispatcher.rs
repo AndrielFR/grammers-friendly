@@ -11,7 +11,7 @@ use std::pin::pin;
 use futures_util::future::{select, Either};
 use grammers_client::Client;
 
-use crate::{traits::Module, Data, Middleware, MiddlewareType, Router};
+use crate::{traits::Module, Data, Middleware, Router};
 
 /// The main dispatcher.
 ///
@@ -27,6 +27,8 @@ impl Dispatcher {
     /// Attach a new middleware to the dispatcher.
     ///
     /// Which will be runned before or after each `handler`.
+    ///
+    /// Has no effect if added after sub-routers.
     pub fn add_middleware(mut self, middleware: Middleware) -> Self {
         self.middlewares.push(middleware);
         self
@@ -46,8 +48,14 @@ impl Dispatcher {
     ///
     /// Which will be runned after the before `middleware`.
     pub fn add_router(mut self, mut router: Router) -> Self {
-        self.data.modules().into_iter().for_each(|module| {
+        // Send a clone of each module to the router
+        self.data.modules.clone().into_iter().for_each(|module| {
             router.push_module(module);
+        });
+
+        // Send a clone of each middleware to the router
+        self.middlewares.clone().into_iter().for_each(|middleware| {
+            router.push_middleware(middleware);
         });
 
         self.routers.push(router);
@@ -64,36 +72,20 @@ impl Dispatcher {
 
             let mut update = match select(exit, update).await {
                 Either::Left(_) => break,
-                Either::Right((u, _)) => u.unwrap(),
+                Either::Right((u, _)) => u?,
             };
 
             moro::async_scope!(|scope| {
                 let mut client = client.clone();
                 let update = &mut update;
 
-                let data = &mut self.data;
                 let routers = &mut self.routers;
-                let middlewares = &mut self.middlewares;
 
                 scope.spawn(async move {
-                    for middleware in middlewares
-                        .iter_mut()
-                        .filter(|m| m.mtype() == MiddlewareType::Before)
-                    {
-                        middleware.call(&mut client, update, data).await;
-                    }
-
                     for router in routers.iter_mut() {
                         if router.handle_update(&mut client, update).await {
                             break;
                         }
-                    }
-
-                    for middleware in middlewares
-                        .iter_mut()
-                        .filter(|m| m.mtype() == MiddlewareType::After)
-                    {
-                        middleware.call(&mut client, update, data).await;
                     }
                 });
             })

@@ -12,7 +12,7 @@ use grammers_client::{Client, Update};
 
 use crate::{
     traits::{AsyncFnCallback, Filter},
-    Data,
+    Data, Middleware, MiddlewareType,
 };
 
 /// A Handler.
@@ -95,6 +95,7 @@ impl Handler {
         client: &mut Client,
         update: &mut Update,
         data: &mut Data,
+        middlewares: &mut [Middleware],
     ) -> bool {
         if matches!(self.update_type, UpdateType::NewMessage)
             && matches!(update, Update::NewMessage(_))
@@ -112,12 +113,27 @@ impl Handler {
                 return false;
             }
 
+            for middleware in middlewares
+                .iter_mut()
+                .filter(|m| m.mtype() == MiddlewareType::Before)
+            {
+                middleware.call(client, update, data).await;
+            }
+
             if let Err(e) = self.func.call(client, update, data).await {
                 log::error!("Error while running handler: {}", e);
             }
 
+            for middleware in middlewares
+                .iter_mut()
+                .filter(|m| m.mtype() == MiddlewareType::After)
+            {
+                middleware.call(client, update, data).await;
+            }
+
             return true;
         }
+
         false
     }
 }
