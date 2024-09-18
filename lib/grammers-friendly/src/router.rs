@@ -92,22 +92,21 @@ impl Router {
         moro::async_scope!(|scope| {
             let data = &mut self.data;
             let handlers = &mut self.handlers;
-            let sub_routers = &mut self.sub_routers;
             let middlewares = &mut self.middlewares;
+            let sub_routers = &mut self.sub_routers;
 
-            scope.spawn(async move {
+            scope.spawn(async {
                 for handler in handlers.iter_mut() {
                     if handler.handle(client, update, data, middlewares).await {
                         update_handled = true;
-                        break;
+                        return;
                     }
                 }
 
-                if !update_handled {
-                    for sub_router in sub_routers.iter_mut() {
-                        if sub_router.handle_update(client, update).await {
-                            break;
-                        }
+                for sub_router in sub_routers.iter_mut() {
+                    if sub_router.handle_update(client, update).await {
+                        update_handled = true;
+                        return;
                     }
                 }
             });

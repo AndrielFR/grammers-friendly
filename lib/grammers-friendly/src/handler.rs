@@ -122,6 +122,7 @@ impl Handler {
 
             if let Err(e) = self.func.call(client, update, data).await {
                 log::error!("Error while running handler: {}", e);
+                return false;
             }
 
             for middleware in middlewares
