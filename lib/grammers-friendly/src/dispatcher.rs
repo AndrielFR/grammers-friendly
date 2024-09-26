@@ -11,7 +11,10 @@ use std::pin::pin;
 use futures_util::future::{select, Either};
 use grammers_client::Client;
 
-use crate::{traits::Module, Data, Middleware, Router};
+use crate::{
+    traits::{GetSender, Module},
+    Data, Middleware, Router,
+};
 
 /// The main dispatcher.
 ///
@@ -21,6 +24,8 @@ pub struct Dispatcher {
     data: Data,
     middlewares: Vec<Middleware>,
     routers: Vec<Router>,
+
+    ignore_updates_from_self: bool,
 }
 
 impl Dispatcher {
@@ -62,10 +67,25 @@ impl Dispatcher {
         self
     }
 
+    /// Ignore updates from self.
+    ///
+    /// Telegram sends the update of the invocation made by the user.
+    /// If disabled the updates will be handled.
+    ///
+    /// `true` -> ignore.
+    /// `false` -> handle it (default).
+    pub fn ignore_updates_from_self(mut self, value: bool) -> Self {
+        self.ignore_updates_from_self = value;
+        self
+    }
+
     /// Run the dispatcher.
     ///
     /// Listen to the updates sent by Telegram and distribute them whitin the `routers`.
     pub async fn run(mut self, client: Client) -> Result<(), Box<dyn std::error::Error>> {
+        let me = client.get_me().await?;
+        let me_id = me.id();
+
         loop {
             let exit = pin!(async { tokio::signal::ctrl_c().await });
             let update = pin!(async { client.next_update().await });
@@ -82,6 +102,14 @@ impl Dispatcher {
                 let routers = &mut self.routers;
 
                 scope.spawn(async move {
+                    if self.ignore_updates_from_self {
+                        if let Some(sender) = update.get_sender() {
+                            if sender.id() == me_id {
+                                return;
+                            }
+                        }
+                    }
+
                     for router in routers.iter_mut() {
                         if router.handle_update(&mut client, update).await {
                             break;
