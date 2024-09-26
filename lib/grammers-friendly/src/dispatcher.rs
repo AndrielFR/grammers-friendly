@@ -103,10 +103,9 @@ impl Dispatcher {
 
                 scope.spawn(async move {
                     if self.ignore_updates_from_self {
-                        if let Some(sender) = update.get_sender() {
-                            if sender.id() == me_id {
-                                return;
-                            }
+                        match update.get_sender() {
+                            Some(sender) if sender.id() == me_id => return,
+                            _ => {}
                         }
                     }
 
