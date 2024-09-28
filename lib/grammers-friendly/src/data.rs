@@ -22,11 +22,6 @@ impl Data {
         self.modules.clone()
     }
 
-    /// Attach a new unboxed module.
-    pub(crate) fn add_module<M: Module>(&mut self, module: M) {
-        self.modules.push(Box::new(module));
-    }
-
     /// Attach a new boxed module.
     pub(crate) fn push_module(&mut self, module: Box<dyn Module>) {
         self.modules.push(module);
@@ -46,6 +41,6 @@ impl Data {
     pub fn get_module<M: Module>(&self) -> Option<Box<M>> {
         self.modules
             .iter()
-            .find_map(|module| module.clone().downcast::<M>().ok())
+            .find_map(|module| Box::clone(module).downcast::<M>().ok())
     }
 }

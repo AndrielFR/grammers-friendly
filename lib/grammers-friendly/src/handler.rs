@@ -9,6 +9,7 @@
 use std::sync::Arc;
 
 use grammers_client::{Client, Update};
+use tokio::sync::Mutex;
 
 use crate::{
     traits::{AsyncFnCallback, Filter},
@@ -95,7 +96,7 @@ impl Handler {
         client: &mut Client,
         update: &mut Update,
         data: &mut Data,
-        middlewares: &mut [Middleware],
+        middlewares: &mut Vec<Arc<Mutex<Middleware>>>,
     ) -> bool {
         if matches!(self.update_type, UpdateType::NewMessage)
             && matches!(update, Update::NewMessage(_))
@@ -115,9 +116,10 @@ impl Handler {
 
             for middleware in middlewares
                 .iter_mut()
-                .filter(|m| m.mtype() == MiddlewareType::Before)
+                .filter(|m| m.try_lock().unwrap().mtype() == MiddlewareType::Before)
             {
-                middleware.call(client, update, data).await;
+                let mut mid = middleware.try_lock().unwrap();
+                mid.call(client, update, data).await;
             }
 
             if let Err(e) = self.func.call(client, update, data).await {
@@ -127,9 +129,10 @@ impl Handler {
 
             for middleware in middlewares
                 .iter_mut()
-                .filter(|m| m.mtype() == MiddlewareType::After)
+                .filter(|m| m.try_lock().unwrap().mtype() == MiddlewareType::After)
             {
-                middleware.call(client, update, data).await;
+                let mut mid = middleware.try_lock().unwrap();
+                mid.call(client, update, data).await;
             }
 
             return true;

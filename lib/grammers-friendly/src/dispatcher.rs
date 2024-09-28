@@ -6,10 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::pin::pin;
+use std::{pin::pin, sync::Arc};
 
 use futures_util::future::{select, Either};
 use grammers_client::Client;
+use tokio::sync::Mutex;
 
 use crate::{
     traits::{GetSender, Module},
@@ -22,7 +23,7 @@ use crate::{
 #[derive(Default)]
 pub struct Dispatcher {
     data: Data,
-    middlewares: Vec<Middleware>,
+    middlewares: Vec<Arc<Mutex<Middleware>>>,
     routers: Vec<Router>,
 
     ignore_updates_from_self: bool,
@@ -35,7 +36,7 @@ impl Dispatcher {
     ///
     /// Has no effect if added after sub-routers.
     pub fn add_middleware(mut self, middleware: Middleware) -> Self {
-        self.middlewares.push(middleware);
+        self.middlewares.push(Arc::new(Mutex::new(middleware)));
         self
     }
 
@@ -45,7 +46,7 @@ impl Dispatcher {
     ///
     /// Has no effect if added after sub-routers.
     pub fn add_module<M: Module>(mut self, module: M) -> Self {
-        self.data.add_module(module);
+        self.data.push_module(Box::new(module));
         self
     }
 
@@ -53,14 +54,12 @@ impl Dispatcher {
     ///
     /// Which will be runned after the before `middleware`.
     pub fn add_router(mut self, mut router: Router) -> Self {
-        // Send a clone of each module to the router
-        self.data.modules.clone().into_iter().for_each(|module| {
-            router.push_module(module);
+        self.data.modules.iter().for_each(|module| {
+            router.push_module(Box::clone(module));
         });
 
-        // Send a clone of each middleware to the router
-        self.middlewares.clone().into_iter().for_each(|middleware| {
-            router.push_middleware(middleware);
+        self.middlewares.iter().for_each(|middleware| {
+            router.push_middleware(Arc::clone(middleware));
         });
 
         self.routers.push(router);

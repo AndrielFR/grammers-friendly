@@ -6,8 +6,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use std::sync::Arc;
+
 use async_recursion::async_recursion;
 use grammers_client::{Client, Update};
+use tokio::sync::Mutex;
 
 use crate::{traits::Module, Data, Handler, Middleware};
 
@@ -18,8 +21,8 @@ use crate::{traits::Module, Data, Handler, Middleware};
 pub struct Router {
     data: Data,
     handlers: Vec<Handler>,
-    middlewares: Vec<Middleware>,
-    sub_routers: Vec<Router>,
+    middlewares: Vec<Arc<Mutex<Middleware>>>,
+    sub_routers: Vec<Box<Router>>,
 }
 
 impl Router {
@@ -37,23 +40,34 @@ impl Router {
     ///
     /// Which will be runned before or after each `handler`.
     pub fn add_middleware(mut self, middleware: Middleware) -> Self {
-        self.middlewares.push(middleware);
+        self.middlewares.push(Arc::new(Mutex::new(middleware)));
         self
     }
 
-    /// Attach a new unboxed module to the router.
+    /// Attach a new module to the router.
     ///
     /// Which will be sent a mutable reference for each `middleware` and `handler`.
     pub fn add_module<M: Module>(mut self, module: M) -> Self {
-        self.data.add_module(module);
+        self.data.push_module(Box::new(module));
         self
     }
 
-    /// Attach a new middleware to the router.
+    /// Attach a new sub-router to the router.
     ///
-    /// Which will be runned before or after each `handler`.
-    pub(crate) fn push_middleware(&mut self, middleware: Middleware) {
-        self.middlewares.push(middleware);
+    /// Which will be runned if the current router don't handle the update.
+    pub fn add_sub_router(mut self, sub_router: Router) -> Self {
+        let mut sub_router = Box::new(sub_router);
+
+        self.data.modules.iter().for_each(|module| {
+            sub_router.push_module(Box::clone(module));
+        });
+
+        self.middlewares.iter().for_each(|middleware| {
+            sub_router.push_middleware(Arc::clone(middleware));
+        });
+
+        self.sub_routers.push(sub_router);
+        self
     }
 
     /// Attach a new boxed module to the router.
@@ -63,22 +77,11 @@ impl Router {
         self.data.push_module(module);
     }
 
-    /// Attach a new sub-router to the router.
+    /// Attach a new boxed middleware to the router.
     ///
-    /// Which will be runned if the current router don't handle the update.
-    pub fn add_sub_router(mut self, mut sub_router: Router) -> Self {
-        // Send a clone of each module to the sub-router
-        self.data.modules.clone().into_iter().for_each(|module| {
-            sub_router.push_module(module);
-        });
-
-        // Send a clone of each middleware to the sub-router
-        self.middlewares.clone().into_iter().for_each(|middleware| {
-            sub_router.push_middleware(middleware);
-        });
-
-        self.sub_routers.push(sub_router);
-        self
+    /// Which will be runned before or after each `handler`.
+    pub(crate) fn push_middleware(&mut self, middleware: Arc<Mutex<Middleware>>) {
+        self.middlewares.push(middleware);
     }
 
     /// Handle the update sent by Telegram.
