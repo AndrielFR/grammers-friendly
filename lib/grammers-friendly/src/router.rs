@@ -56,17 +56,7 @@ impl Router {
     ///
     /// Which will be runned if the current router don't handle the update.
     pub fn add_sub_router(mut self, sub_router: Router) -> Self {
-        let mut sub_router = Box::new(sub_router);
-
-        self.data.modules.iter().for_each(|module| {
-            sub_router.push_module(Box::clone(module));
-        });
-
-        self.middlewares.iter().for_each(|middleware| {
-            sub_router.push_middleware(Arc::clone(middleware));
-        });
-
-        self.sub_routers.push(sub_router);
+        self.sub_routers.push(Box::new(sub_router));
         self
     }
 
@@ -82,6 +72,19 @@ impl Router {
     /// Which will be runned before or after each `handler`.
     pub(crate) fn push_middleware(&mut self, middleware: Arc<Mutex<Middleware>>) {
         self.middlewares.push(middleware);
+    }
+
+    /// Update sub-routers' data and middlewares.
+    pub(crate) fn update_sub_routers(&mut self) {
+        self.sub_routers.iter_mut().for_each(|sub_router| {
+            self.data.modules.iter().for_each(|module| {
+                sub_router.push_module(Box::clone(module));
+            });
+
+            self.middlewares.iter().for_each(|middleware| {
+                sub_router.push_middleware(Arc::clone(middleware));
+            });
+        });
     }
 
     /// Handle the update sent by Telegram.

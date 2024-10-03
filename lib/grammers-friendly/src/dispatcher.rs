@@ -62,6 +62,8 @@ impl Dispatcher {
             router.push_middleware(Arc::clone(middleware));
         });
 
+        router.update_sub_routers();
+
         self.routers.push(router);
         self
     }
