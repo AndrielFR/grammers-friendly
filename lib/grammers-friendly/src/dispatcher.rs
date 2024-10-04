@@ -9,7 +9,7 @@
 use std::{pin::pin, sync::Arc};
 
 use futures_util::future::{select, Either};
-use grammers_client::Client;
+use grammers_client::{types::Chat, Client};
 use tokio::sync::Mutex;
 
 use crate::{
@@ -84,9 +84,6 @@ impl Dispatcher {
     ///
     /// Listen to the updates sent by Telegram and distribute them whitin the `routers`.
     pub async fn run(mut self, client: Client) -> Result<(), Box<dyn std::error::Error>> {
-        let me = client.get_me().await?;
-        let me_id = me.id();
-
         loop {
             let exit = pin!(async { tokio::signal::ctrl_c().await });
             let update = pin!(async { client.next_update().await });
@@ -104,9 +101,12 @@ impl Dispatcher {
 
                 scope.spawn(async move {
                     if self.ignore_updates_from_self {
-                        match update.get_sender() {
-                            Some(sender) if sender.id() == me_id => return,
-                            _ => {}
+                        if let Some(sender) = update.get_sender() {
+                            if let Chat::User(user) = sender {
+                                if user.is_self() {
+                                    return;
+                                }
+                            }
                         }
                     }
 
