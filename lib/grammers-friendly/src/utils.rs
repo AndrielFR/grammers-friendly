@@ -113,16 +113,24 @@ pub fn gen_page_buttons(
     let mut buttons = Vec::with_capacity(max_buttons as usize);
     let query = query.into();
 
-    let start_symbol = '⮜';
-    let previous_symbol = '⮘';
-    let current_symbol = '⮟';
-    let next_symbol = '⮚';
-    let end_symbol = '⮞';
+    let start_symbol = '.';
+    let previous_symbol = '·';
+    let current_symbol = '•';
+    let next_symbol = '·';
+    let end_symbol = '.';
 
-    let start = (current_page - (max_buttons / 2)).max(1);
-    let end = (start + max_buttons - 1).min(total_pages);
+    let mut start = (current_page - (max_buttons / 2)).max(1);
+    let end = (start + (max_buttons - 1)).min(total_pages);
 
-    if start > max_buttons {
+    if start > 1 {
+        let diff = total_pages - current_page;
+
+        if diff > 1 {
+            start += 1;
+        } else if diff < 1 {
+            start -= 1;
+        }
+
         buttons.push(button::inline(
             format!("{0} {1}", start_symbol, 1),
             query.replace(":page:", "1"),
@@ -134,24 +142,24 @@ pub fn gen_page_buttons(
 
         match page.cmp(&current_page) {
             Ordering::Greater => buttons.push(button::inline(
-                format!("{0} {1}", next_symbol, page),
+                format!("{0} {1}", page, next_symbol),
                 callback.clone(),
             )),
             Ordering::Less => buttons.push(button::inline(
                 format!("{0} {1}", previous_symbol, page),
                 callback.clone(),
             )),
-
             Ordering::Equal => buttons.push(button::inline(
-                format!("{0} {1}", current_symbol, page),
+                format!("{0} {1} {0}", current_symbol, page),
                 callback.clone(),
             )),
         }
     }
 
     if end < total_pages {
+        buttons.remove(buttons.len() - 1);
         buttons.push(button::inline(
-            format!("{0} {1}", end_symbol, total_pages),
+            format!("{0} {1}", total_pages, end_symbol),
             query.replace(":page:", &total_pages.to_string()),
         ));
     }
