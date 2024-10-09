@@ -76,7 +76,9 @@ impl QueryFilter {
                 }
             });
 
-        let query = new_query.join(r"\s");
+        let mut query = new_query.join(r"\s");
+        query.insert(0, '^');
+
         Self {
             query: Regex::new(&query).unwrap(),
         }
